@@ -1,0 +1,9 @@
+config/*.env
+.env
+__pycache__/
+app/__pycache__/
+*.pyc
+downloads/*.csv
+email_queue/
+perfil_soft4/
+Scripts/
