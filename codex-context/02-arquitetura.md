@@ -4,7 +4,9 @@
 
 ```text
 main.py
-  -> app.main.run()
+  -> app.main.main()
+    -> parse de --dry-run
+    -> app.main.run(dry_run)
     -> setup_logging()
     -> cleanup_runtime_residue()
     -> load_settings()
@@ -19,9 +21,9 @@ main.py
 
 ## Modulos
 
-- `main.py`: entrada publica; importa `app.main.run()` e repassa o codigo de saida.
-- `app/main.py`: orquestra setup, limpeza, autenticacao, download, filtro local, fila, envio e tratamento de erros.
-- `app/settings.py`: define dataclasses `Soft4Settings`, `EmailSettings`, `EmailQueueSettings`, `ManagerReportSettings` e `AppSettings`; carrega `.env`, arquivos legados, variaveis e diretorios.
+- `main.py`: entrada publica; importa `app.main.main()` e repassa o codigo de saida.
+- `app/main.py`: interpreta `--dry-run` e orquestra setup, limpeza, autenticacao, download, filtro local, fila, envio e tratamento de erros.
+- `app/settings.py`: define dataclasses `Soft4Settings`, `EmailSettings`, `EmailQueueSettings`, `ManagerReportSettings` e `AppSettings`; carrega `.env`, arquivos legados, variaveis e diretorios; configura log rotativo em `logs/frank_bot.log`.
 - `app/auth.py`: define `Soft4Browser` e `AuthenticatedSession`; abre Chromium persistente, autentica no Soft4, detecta login, coleta cookies, CSRF e headers.
 - `app/business_days.py`: define `eh_dia_util`, `contar_dias_uteis_sem_interacao`, `chamado_deve_ser_processado`, feriados nacionais, feriados adicionais e filtro local do CSV.
 - `app/downloader.py`: monta payload da fila, executa POST autenticado via `page.evaluate(fetch)`, valida conteudo e salva CSV completo.

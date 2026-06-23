@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 from datetime import datetime
+from typing import Sequence
 
 from app.auth import Soft4Browser
 from app.business_days import (
@@ -25,9 +27,11 @@ LOGGER = logging.getLogger(__name__)
 sys.dont_write_bytecode = True
 
 
-def run() -> int:
+def run(dry_run: bool = False) -> int:
     setup_logging()
     LOGGER.info("Iniciando automacao")
+    if dry_run:
+        LOGGER.warning("Modo dry-run ativo: nenhum email sera enviado")
     cleanup_runtime_residue(PROJECT_ROOT)
 
     try:
@@ -63,6 +67,16 @@ def run() -> int:
         )
         if not email_queue.items:
             raise RuntimeError(f"Fila de email sem itens enviaveis: {email_queue.queue_dir}")
+
+        if dry_run:
+            LOGGER.info(
+                "Dry-run finalizado: %s email(s) individual(is) e o relatorio gerencial "
+                "nao foram enviados. Fila mantida como pending em %s",
+                len(email_queue.items),
+                email_queue.queue_dir,
+            )
+            LOGGER.info("Automacao finalizada")
+            return 0
 
         failures: list[str] = []
         for item in email_queue.items:
@@ -110,5 +124,18 @@ def run() -> int:
         cleanup_runtime_residue(PROJECT_ROOT)
 
 
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Exporta a fila Soft4 e envia os CSVs por e-mail.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Baixa e processa o CSV, mas nao envia e-mails.",
+    )
+    args = parser.parse_args(argv)
+    return run(dry_run=args.dry_run)
+
+
 if __name__ == "__main__":
-    raise SystemExit(run())
+    raise SystemExit(main())

@@ -15,9 +15,7 @@
 
 ## Melhorias Recomendadas
 
-- Criar modo `--dry-run` para baixar CSV e montar fila sem enviar e-mail.
 - Criar comando de reenvio de itens `failed` sem baixar novo CSV.
-- Salvar logs em arquivo por execucao.
 - Mascarar e-mails nos logs quando logs forem compartilhados fora do time.
 - Parametrizar grupos de solucao e status hoje fixos no payload.
 - Documentar exemplo sanitizado de `queue.json`.

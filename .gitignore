@@ -6,8 +6,8 @@ app/__pycache__/
 downloads/*.csv
 email_queue/
 perfil_soft4/
+logs/
 Scripts/
-tests/
 codex-context/
 CODEX_START_HERE.md
 README.md

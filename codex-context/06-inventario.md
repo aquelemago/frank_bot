@@ -29,14 +29,16 @@ python C:\Users\lucas.silva\.codex\skills\project-context-auditor\scripts\audit_
 
 ## Entradas Publicas
 
-- `python main.py`: entrada publica operacional; chama `app.main.run()`.
+- `python main.py`: entrada publica operacional; chama `app.main.main()`.
+- `python main.py --dry-run`: executa download, filtro e fila sem chamadas SMTP.
 - `app.main.run()`: orquestrador real do fluxo.
 - `tests/run_unittest_discovery.py`: entrada de testes unittest.
 
 ## Modulos Python
 
-- `main.py`: repassa codigo de saida de `app.main.run()`.
-- `app/main.py`: setup de logs, limpeza, settings, autenticacao, download, filtro por dias uteis, fila, envio individual, relatorio gerencial e codigos de saida.
+- `main.py`: repassa argumentos e codigo de saida de `app.main.main()`.
+- `app/main.py`: CLI, setup de logs, limpeza, settings, autenticacao, download, filtro por dias uteis, fila, envio individual, relatorio gerencial e codigos de saida.
+- `app/settings.py`: tambem configura log rotativo em `logs/frank_bot.log`.
 - `app/settings.py`: dataclasses de configuracao, leitura de `.env` e arquivos legados, criacao de diretorios runtime.
 - `app/auth.py`: Playwright Chromium persistente, login, reaproveitamento de sessao, CSRF, cookies e headers.
 - `app/downloader.py`: payload da fila, POST via `fetch` autenticado, validacao do CSV e remocao de CSVs antigos.

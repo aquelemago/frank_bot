@@ -130,6 +130,13 @@ virgula nos formatos `AAAA-MM-DD` ou `DD/MM/AAAA`.
 python main.py
 ```
 
+Para baixar e processar o CSV, criar a fila e validar a rotina sem enviar
+nenhum e-mail:
+
+```powershell
+python main.py --dry-run
+```
+
 Codigos de saida:
 
 - `0`: automacao finalizada com sucesso.
@@ -202,8 +209,9 @@ Nao rode a automacao real contra Soft4/SMTP sem confirmar que as credenciais e d
 
 ## Modulos Principais
 
-- `main.py`: ponto de entrada publico; chama `app.main.run()`.
-- `app/main.py`: orquestra setup, login, download, fila, envio e limpeza.
+- `main.py`: ponto de entrada publico; chama `app.main.main()`.
+- `app/main.py`: interpreta `--dry-run` e orquestra setup, login, download,
+  fila, envio e limpeza.
 - `app/settings.py`: carrega `.env`, arquivos legados, dataclasses e diretorios.
 - `app/auth.py`: gerencia Playwright, sessao persistente, login e headers.
 - `app/downloader.py`: executa POST autenticado e salva o CSV completo.
@@ -233,6 +241,15 @@ email_queue/YYYYMMDD_HHMMSS/
 `queue.json` resume a execucao. Cada `<atendente>.json` registra destinatario, CSV, quantidade de registros, status e erro quando houver.
 
 ## Logs
+
+Os logs sao exibidos no terminal e gravados em:
+
+```text
+logs/frank_bot.log
+```
+
+O arquivo possui rotacao automatica ao atingir 5 MB, mantendo ate cinco
+arquivos anteriores.
 
 Exemplos esperados:
 

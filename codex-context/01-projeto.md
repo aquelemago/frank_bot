@@ -58,7 +58,7 @@ Fora de escopo atual:
 - Nao altera chamados no Soft4.
 - Nao usa Selenium, PyAutoGUI ou automacao visual.
 - Nao mantem historico de filas antigas.
-- Nao possui modo `dry-run`.
+- Possui modo `--dry-run`, que baixa e processa o CSV e cria a fila sem enviar e-mails.
 - Nao possui reenvio isolado de itens `failed`.
 - Nao executa agendamento nativo.
 

@@ -15,6 +15,15 @@ Nao imprima nem resuma `.env` ou `config/*.env`.
 python main.py
 ```
 
+Execucao segura sem envio de e-mails:
+
+```powershell
+python main.py --dry-run
+```
+
+O modo `--dry-run` ainda acessa o Soft4, baixa e filtra o CSV e cria a fila
+com itens `pending`, mas nao chama o SMTP individual nem o relatorio gerencial.
+
 Codigos de saida:
 
 - `0`: automacao finalizada com sucesso.
@@ -56,6 +65,10 @@ python C:\Users\lucas.silva\.codex\skills\softdesk-python-qa\scripts\audit_proje
 ```
 
 ## Logs Esperados
+
+Os logs sao enviados ao terminal e ao arquivo rotativo
+`logs/frank_bot.log`. Cada arquivo pode atingir 5 MB e ate cinco arquivos
+anteriores sao mantidos.
 
 ```text
 [INFO] Iniciando automacao

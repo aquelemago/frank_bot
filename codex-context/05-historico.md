@@ -1,5 +1,13 @@
 # Historico
 
+## 2026-06-23 - Dry-run E Logs Persistentes
+
+- Adicionado `python main.py --dry-run` para baixar, filtrar e montar a fila sem enviar e-mails.
+- Itens criados em dry-run permanecem com status `pending`.
+- Adicionado log simultaneo no terminal e em `logs/frank_bot.log`.
+- O log usa rotacao de 5 MB e mantem ate cinco arquivos anteriores.
+- Adicionados testes para CLI, bloqueio de SMTP no dry-run e escrita do log.
+
 ## 2026-05-07
 
 - Analise inicial do projeto.
