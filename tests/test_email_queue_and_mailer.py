@@ -12,7 +12,12 @@ from app.business_days import (
     filtrar_csv_por_dias_uteis_sem_interacao,
 )
 from app.email_queue import build_attendant_email_queue, normalize_key
-from app.mailer import send_attendant_csv_email, send_manager_report_email, send_test_email
+from app.mailer import (
+    send_attendant_csv_email,
+    send_dry_run_success_email,
+    send_manager_report_email,
+    send_test_email,
+)
 from app.settings import EmailQueueSettings, EmailSettings
 
 
@@ -148,6 +153,34 @@ class EmailQueueAndMailerTests(unittest.TestCase):
         )
         html_body = message.get_payload()[0].get_payload(decode=True).decode("utf-8")
         self.assertIn("e-mail de teste da automacao Soft4/Mainhardt", html_body)
+
+    def test_dry_run_success_email_goes_only_to_lucas(self) -> None:
+        sent: dict[str, object] = {}
+
+        def capture_send(settings, message, recipients):
+            sent["message"] = message
+            sent["recipients"] = recipients
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("app.mailer._send_message", capture_send):
+                send_dry_run_success_email(
+                    settings=EmailSettings("smtp.example.com", 587, "bot@example.com", "secret"),
+                    recipient="lucas.silva@mainhardt.com.br",
+                    exported_at=datetime(2026, 6, 24, 9, 30, 0),
+                    simulated_individual_emails=3,
+                    queue_dir=Path(temp_dir) / "email_queue" / "20260624_093000",
+                )
+
+        message = sent["message"]
+        self.assertEqual(sent["recipients"], ["lucas.silva@mainhardt.com.br"])
+        self.assertEqual(message["To"], "lucas.silva@mainhardt.com.br")
+        self.assertEqual(
+            message["Subject"],
+            "Dry-run bem-sucedido - Automacao Soft4 - 24/06/2026",
+        )
+        html_body = message.get_payload()[0].get_payload(decode=True).decode("utf-8")
+        self.assertIn("E-mails individuais simulados:</strong> 3", html_body)
+        self.assertIn("Nenhum e-mail de atendimento foi enviado", html_body)
 
     def test_normalize_key_removes_accents_and_symbols(self) -> None:
         self.assertEqual(normalize_key("Patrícia König Costa"), "PATRICIA_KONIG_COSTA")

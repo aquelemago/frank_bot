@@ -130,12 +130,18 @@ virgula nos formatos `AAAA-MM-DD` ou `DD/MM/AAAA`.
 python main.py
 ```
 
-Para baixar e processar o CSV, criar a fila e validar a rotina sem enviar
-nenhum e-mail:
+Para baixar e processar o CSV, criar a fila e simular uma execucao real sem
+enviar nenhum e-mail:
 
 ```powershell
 python main.py --dry-run
 ```
+
+Nesse modo, a automacao registra nos logs quais e-mails individuais seriam
+enviados e qual relatorio gerencial seria enviado. Os e-mails de atendimento
+nao sao enviados para atendentes nem gestora; apos uma simulacao bem-sucedida,
+apenas uma confirmacao e enviada para `lucas.silva@mainhardt.com.br`. Os itens
+da fila permanecem como `pending`.
 
 Para enviar apenas um e-mail de teste SMTP para o atendente Lucas Silva:
 

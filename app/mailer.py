@@ -124,6 +124,53 @@ def send_test_email(
     LOGGER.info("Email de teste enviado para %s", recipient)
 
 
+def send_dry_run_success_email(
+    settings: EmailSettings,
+    recipient: str,
+    exported_at: datetime,
+    simulated_individual_emails: int,
+    queue_dir: Path,
+) -> None:
+    recipients = _parse_recipients(recipient)
+
+    message = MIMEMultipart()
+    message["From"] = settings.usuario
+    message["To"] = ", ".join(recipients)
+    message["Subject"] = f"Dry-run bem-sucedido - Automacao Soft4 - {exported_at:%d/%m/%Y}"
+
+    html_body = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
+        <p>Ola.</p>
+
+        <p>
+          O dry-run da automacao Soft4/Mainhardt foi concluido com sucesso.
+        </p>
+
+        <p>
+          Nenhum e-mail de atendimento foi enviado para atendentes ou gestora.
+          A rotina apenas simulou a execucao real e validou a fila gerada.
+        </p>
+
+        <p>
+          <strong>E-mails individuais simulados:</strong> {simulated_individual_emails}<br>
+          <strong>Relatorio gerencial simulado:</strong> sim<br>
+          <strong>Data e hora da exportacao:</strong> {exported_at:%d/%m/%Y %H:%M:%S}<br>
+          <strong>Fila gerada:</strong> {html.escape(str(queue_dir))}
+        </p>
+      </body>
+    </html>
+    """
+    message.attach(MIMEText(html_body, "html", "utf-8"))
+
+    try:
+        _send_message(settings, message, recipients)
+    except Exception as error:
+        raise EmailSendError(f"Falha ao enviar confirmacao de dry-run: {error}") from error
+
+    LOGGER.info("Confirmacao de dry-run enviada para %s", recipient)
+
+
 def send_manager_report_email(
     settings: EmailSettings,
     recipient: str,

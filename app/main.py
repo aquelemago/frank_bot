@@ -19,19 +19,46 @@ from app.email_queue import (
     mark_queue_item_failed,
     mark_queue_item_sent,
 )
-from app.mailer import send_attendant_csv_email, send_manager_report_email
+from app.mailer import (
+    send_attendant_csv_email,
+    send_dry_run_success_email,
+    send_manager_report_email,
+)
 from app.settings import ConfigError, PROJECT_ROOT, load_settings, setup_logging
 
 
 LOGGER = logging.getLogger(__name__)
 sys.dont_write_bytecode = True
+DRY_RUN_NOTIFICATION_RECIPIENT = "lucas.silva@mainhardt.com.br"
+
+
+def _log_dry_run_plan(email_queue, manager_recipient: str) -> None:
+    for item in email_queue.items:
+        LOGGER.info(
+            "Dry-run: email individual seria enviado para %s <%s> com %s chamado(s); "
+            "anexo=%s",
+            item.attendant,
+            item.recipient,
+            item.row_count,
+            item.csv_path,
+        )
+
+    LOGGER.info(
+        "Dry-run: relatorio gerencial seria enviado para %s com %s atendente(s)",
+        manager_recipient,
+        len(email_queue.items),
+    )
 
 
 def run(dry_run: bool = False) -> int:
     setup_logging()
     LOGGER.info("Iniciando automacao")
     if dry_run:
-        LOGGER.warning("Modo dry-run ativo: nenhum email sera enviado")
+        LOGGER.warning(
+            "Modo dry-run ativo: emails de atendimento nao serao enviados; "
+            "apenas a confirmacao de sucesso sera enviada para %s",
+            DRY_RUN_NOTIFICATION_RECIPIENT,
+        )
     cleanup_runtime_residue(PROJECT_ROOT)
 
     try:
@@ -69,11 +96,19 @@ def run(dry_run: bool = False) -> int:
             raise RuntimeError(f"Fila de email sem itens enviaveis: {email_queue.queue_dir}")
 
         if dry_run:
+            _log_dry_run_plan(email_queue, settings.manager_report.recipient)
             LOGGER.info(
-                "Dry-run finalizado: %s email(s) individual(is) e o relatorio gerencial "
-                "nao foram enviados. Fila mantida como pending em %s",
+                "Dry-run bem-sucedido: %s email(s) individual(is) e o relatorio gerencial "
+                "foram simulados, mas nao enviados. Fila mantida como pending em %s",
                 len(email_queue.items),
                 email_queue.queue_dir,
+            )
+            send_dry_run_success_email(
+                settings=settings.email,
+                recipient=DRY_RUN_NOTIFICATION_RECIPIENT,
+                exported_at=exported_at,
+                simulated_individual_emails=len(email_queue.items),
+                queue_dir=email_queue.queue_dir,
             )
             LOGGER.info("Automacao finalizada")
             return 0

@@ -51,7 +51,9 @@ class MainAndLoggingTests(unittest.TestCase):
                     additional_holidays="",
                     no_interaction_attendant_days=3,
                 ),
+                email=SimpleNamespace(),
                 email_queue=SimpleNamespace(last_interaction_column="ultima interacao"),
+                manager_report=SimpleNamespace(recipient="gestora@example.com"),
                 downloads_dir=root / "downloads",
             )
             browser = MagicMock()
@@ -69,8 +71,10 @@ class MainAndLoggingTests(unittest.TestCase):
                 patch("app.main.build_attendant_email_queue", return_value=queue),
                 patch("app.main.send_attendant_csv_email") as attendant_send,
                 patch("app.main.send_manager_report_email") as manager_send,
+                patch("app.main.send_dry_run_success_email") as dry_run_success_send,
                 patch("app.main.mark_queue_item_sent") as mark_sent,
                 patch("app.main.mark_queue_item_failed") as mark_failed,
+                self.assertLogs("app.main", level="INFO") as captured_logs,
                 patch("app.main.datetime") as datetime_mock,
             ):
                 datetime_mock.now.return_value = datetime(2026, 6, 23, 8, 0, 0)
@@ -79,8 +83,18 @@ class MainAndLoggingTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             attendant_send.assert_not_called()
             manager_send.assert_not_called()
+            dry_run_success_send.assert_called_once_with(
+                settings=settings.email,
+                recipient="lucas.silva@mainhardt.com.br",
+                exported_at=datetime(2026, 6, 23, 8, 0, 0),
+                simulated_individual_emails=1,
+                queue_dir=queue_dir,
+            )
             mark_sent.assert_not_called()
             mark_failed.assert_not_called()
+            logs = "\n".join(captured_logs.output)
+            self.assertIn("Dry-run: email individual seria enviado para Ana", logs)
+            self.assertIn("Dry-run bem-sucedido", logs)
 
     def test_setup_logging_writes_to_rotating_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
