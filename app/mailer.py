@@ -81,6 +81,49 @@ def send_attendant_csv_email(
     LOGGER.info("Email enviado para %s (%s)", attendant, recipient)
 
 
+def send_test_email(
+    settings: EmailSettings,
+    recipient: str,
+    sent_at: datetime | None = None,
+) -> None:
+    sent_at = sent_at or datetime.now()
+    recipients = _parse_recipients(recipient)
+
+    message = MIMEMultipart()
+    message["From"] = settings.usuario
+    message["To"] = ", ".join(recipients)
+    message["Subject"] = f"Teste de envio - Automacao Soft4 - {sent_at:%d/%m/%Y %H:%M}"
+
+    html_body = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
+        <p>Ola.</p>
+
+        <p>
+          Este e um e-mail de teste da automacao Soft4/Mainhardt.
+        </p>
+
+        <p>
+          Se voce recebeu esta mensagem, as configuracoes SMTP estao funcionando
+          para envio pela rotina.
+        </p>
+
+        <p>
+          <strong>Data e hora do teste:</strong> {sent_at:%d/%m/%Y %H:%M:%S}
+        </p>
+      </body>
+    </html>
+    """
+    message.attach(MIMEText(html_body, "html", "utf-8"))
+
+    try:
+        _send_message(settings, message, recipients)
+    except Exception as error:
+        raise EmailSendError(f"Falha ao enviar e-mail de teste: {error}") from error
+
+    LOGGER.info("Email de teste enviado para %s", recipient)
+
+
 def send_manager_report_email(
     settings: EmailSettings,
     recipient: str,

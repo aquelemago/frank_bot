@@ -205,3 +205,15 @@ def load_settings() -> AppSettings:
     settings.email_queue.queue_dir.mkdir(parents=True, exist_ok=True)
     settings.soft4.user_data_dir.mkdir(parents=True, exist_ok=True)
     return settings
+
+
+def load_email_settings() -> EmailSettings:
+    load_dotenv(PROJECT_ROOT / ".env")
+    load_dotenv(PROJECT_ROOT / "config" / "email_bot.env", override=False)
+
+    return EmailSettings(
+        host=_env_any(("EMAIL_HOST", "SMTP_HOST"), "smtp.office365.com", required=True),
+        port=_env_any_int(("EMAIL_PORT", "SMTP_PORT"), "587"),
+        usuario=_env_any(("EMAIL_USUARIO", "EMAIL_REMETENTE"), required=True),
+        senha=_env_any(("EMAIL_SENHA", "SENHA"), required=True),
+    )

@@ -137,6 +137,15 @@ nenhum e-mail:
 python main.py --dry-run
 ```
 
+Para enviar apenas um e-mail de teste SMTP para o atendente Lucas Silva:
+
+```powershell
+python tools/send_test_email.py
+```
+
+Esse comando nao acessa o Soft4 e nao baixa CSV. Ele usa somente as
+configuracoes SMTP de `.env` ou `config/email_bot.env`.
+
 Codigos de saida:
 
 - `0`: automacao finalizada com sucesso.

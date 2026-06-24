@@ -12,7 +12,7 @@ from app.business_days import (
     filtrar_csv_por_dias_uteis_sem_interacao,
 )
 from app.email_queue import build_attendant_email_queue, normalize_key
-from app.mailer import send_attendant_csv_email, send_manager_report_email
+from app.mailer import send_attendant_csv_email, send_manager_report_email, send_test_email
 from app.settings import EmailQueueSettings, EmailSettings
 
 
@@ -123,6 +123,31 @@ class EmailQueueAndMailerTests(unittest.TestCase):
             self.assertIn("necessitam de revis&atilde;o", html_body)
             self.assertIn("Total de chamados no anexo:</strong> 1", html_body)
             self.assertGreaterEqual(len(payload), 2)
+
+    def test_test_email_uses_configured_sender_and_recipient(self) -> None:
+        sent: dict[str, object] = {}
+
+        def capture_send(settings, message, recipients):
+            sent["message"] = message
+            sent["recipients"] = recipients
+
+        with patch("app.mailer._send_message", capture_send):
+            send_test_email(
+                settings=EmailSettings("smtp.example.com", 587, "bot@example.com", "secret"),
+                recipient="lucas.silva@mainhardt.com.br",
+                sent_at=datetime(2026, 6, 24, 9, 30, 0),
+            )
+
+        message = sent["message"]
+        self.assertEqual(sent["recipients"], ["lucas.silva@mainhardt.com.br"])
+        self.assertEqual(message["From"], "bot@example.com")
+        self.assertEqual(message["To"], "lucas.silva@mainhardt.com.br")
+        self.assertEqual(
+            message["Subject"],
+            "Teste de envio - Automacao Soft4 - 24/06/2026 09:30",
+        )
+        html_body = message.get_payload()[0].get_payload(decode=True).decode("utf-8")
+        self.assertIn("e-mail de teste da automacao Soft4/Mainhardt", html_body)
 
     def test_normalize_key_removes_accents_and_symbols(self) -> None:
         self.assertEqual(normalize_key("Patrícia König Costa"), "PATRICIA_KONIG_COSTA")
