@@ -1,61 +1,62 @@
-# Comece Aqui
+# Start Here For AI Agents
 
-Este e o ponto de entrada unico para agentes de IA neste projeto.
-Leia este arquivo antes de qualquer outro contexto.
+This is the first file an AI agent should read in this project.
 
-## Ordem De Leitura
+## Ground Rules
 
-1. `CODEX_START_HERE.md`: regras criticas, estado curto e comandos seguros.
-2. `README.md`: guia humano para instalar, configurar e operar.
-3. `codex-context/README.md`: indice tecnico oficial.
-4. Arquivo especifico em `codex-context/`, conforme a tarefa:
-   - `01-projeto.md`: objetivo, escopo, regras de negocio, entradas e saidas.
-   - `02-arquitetura.md`: fluxo, modulos, configuracao, efeitos colaterais.
-   - `03-runbook.md`: setup, execucao, validacao, troubleshooting.
-   - `04-backlog.md`: riscos, pendencias e melhorias.
-   - `05-historico.md`: decisoes e mudancas datadas.
-   - `06-inventario.md`: inventario detalhado de modulos, dependencias, testes e auditorias.
+- The code is the source of truth.
+- Describe observed behavior, not assumptions or outdated intent.
+- Do not open, print, summarize, or commit values from `.env` or `config/*.env`.
+- Do not expose SMTP credentials, Soft4 credentials, cookies, tokens, browser
+  profile data, operational CSV contents, or generated queue data.
+- Do not run the real automation against Soft4/SMTP without explicit approval of
+  environment, credentials, and recipients.
+- Preserve `python main.py` and `app.main.run()` as public entrypoints.
 
-Arquivos que nao sao ponto de partida:
+## Reading Order
 
-- `.codex-audit/`: artefatos gerados por auditoria; podem ser recriados e nao sao memoria oficial.
+1. `CODEX_START_HERE.md`: safety rules and orientation.
+2. `README.md`: human setup, configuration, execution, and validation guide.
+3. `codex-context/README.md`: technical documentation index.
+4. Relevant technical documents:
+   - `codex-context/01-overview.md`: purpose, scope, business rules, inputs,
+     and outputs.
+   - `codex-context/02-architecture.md`: flow, modules, configuration, and side
+     effects.
+   - `codex-context/03-operations.md`: runbook, validation, troubleshooting, and
+     operational safety.
+   - `codex-context/04-decisions.md`: important architecture and behavior
+     decisions.
+   - `codex-context/05-backlog.md`: risks, technical debt, and future work.
+   - `codex-context/06-inventory.md`: audit evidence from the current codebase.
 
-## Regras Criticas
+## Current State
 
-- Nao abrir, imprimir, resumir ou versionar valores de `.env` ou `config/*.env`.
-- Nao expor credenciais SMTP, usuarios, senhas, cookies, tokens ou perfil do navegador.
-- Nao remover `downloads/`, `email_queue/` ou `perfil_soft4/` sem pedido explicito.
-- Preservar `python main.py` e `app.main.run()` como entradas publicas.
-- Documentar comportamento observado no codigo, nao suposicoes.
-- Nao rodar automacao real contra Soft4/SMTP sem confirmacao de ambiente, credenciais e destinatarios.
+- Python automation for exporting the Soft4/Mainhardt support queue as CSV.
+- Main code lives under `app/`.
+- Public command: `python main.py`.
+- Dry-run command: `python main.py --dry-run`.
+- SMTP test command: `python tools/send_test_email.py`.
+- Full CSV output: `downloads/fila_atendimento_YYYYMMDD_HHMMSS.csv`.
+- E-mail queue output: `email_queue/YYYYMMDD_HHMMSS/`.
+- Rotating logs: `logs/frank_bot.log`.
+- Persistent browser profile: `perfil_soft4/`.
+- This folder is a Git repository.
 
-## Estado Atual
-
-- Automacao Python para exportar CSV da fila Soft4/Mainhardt.
-- Codigo principal em `app/`.
-- CSV baixado em `downloads/fila_atendimento_YYYYMMDD_HHMMSS.csv`.
-- Fila de e-mail por execucao em `email_queue/YYYYMMDD_HHMMSS/`.
-- Cada atendente recebe CSV filtrado.
-- A gestora recebe relatorio consolidado.
-- Chamados entram na automacao com 3 ou mais dias uteis sem interacao.
-- A pasta atual nao esta inicializada como repositorio Git; rastreie alteracoes manualmente ou inicialize Git antes de mudancas amplas.
-
-## Validacao Segura
+## Safe Commands
 
 ```powershell
 python -m compileall app tests
 python tests/run_unittest_discovery.py
 ```
 
-## Auditoria De Contexto
-
-Quando precisar atualizar a memoria tecnica do projeto, rode:
+## Unsafe Without Explicit Approval
 
 ```powershell
-python C:\Users\lucas.silva\.codex\skills\project-context-auditor\scripts\audit_project_context.py .
+python main.py
 ```
 
-Use os arquivos gerados em `.codex-audit/` apenas como apoio para atualizar
-`codex-context/`. O codigo continua sendo a fonte de verdade.
+`python main.py --dry-run` is safer than a full run, but it still accesses Soft4,
+downloads real data, creates runtime artifacts, and sends one confirmation e-mail
+to `lucas.silva@mainhardt.com.br`.
 
-Nao execute `python main.py` contra Soft4/SMTP real sem aprovacao explicita.

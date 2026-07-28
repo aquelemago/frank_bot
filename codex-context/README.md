@@ -1,47 +1,43 @@
-# Indice Tecnico Oficial
+# Technical Documentation Index
 
-Esta pasta concentra a memoria tecnica oficial para agentes de IA.
-O ponto de entrada do projeto continua sendo `CODEX_START_HERE.md`.
+This directory is the technical memory for the project. It is written for AI
+agents and maintainers who need to understand or update the system without
+guessing.
 
-## Ordem Recomendada
+The code remains the source of truth. When documentation and code disagree,
+trust the code and update the documentation.
 
-1. `01-projeto.md`: entender produto, escopo, regras de negocio, entradas e saidas.
-2. `02-arquitetura.md`: entender fluxo tecnico, modulos, configuracao e efeitos colaterais.
-3. `03-runbook.md`: executar setup, validacao, troubleshooting e operacao.
-4. `04-backlog.md`: consultar riscos, pendencias e melhorias antes de planejar mudancas.
-5. `05-historico.md`: verificar decisoes e mudancas relevantes.
-6. `06-inventario.md`: consultar inventario detalhado de modulos, dependencias, testes e auditorias.
+## Map
 
-## Responsabilidade De Cada Arquivo
+- `01-overview.md`: what the system does, scope, business rules, inputs, and
+  outputs.
+- `02-architecture.md`: how the system works, modules, configuration surface,
+  and side effects.
+- `03-operations.md`: setup, execution, validation, troubleshooting, and safety.
+- `04-decisions.md`: dated behavior and architecture decisions.
+- `05-backlog.md`: known risks, technical debt, and future improvements.
+- `06-inventory.md`: audit snapshot, reviewed files, dependencies, tests, and
+  generated paths.
 
-- `README.md`: guia humano e operacional, fora desta pasta.
-- `CODEX_START_HERE.md`: inicio unico para agentes de IA, fora desta pasta.
-- `01-projeto.md`: o que o sistema faz.
-- `02-arquitetura.md`: como o sistema faz.
-- `03-runbook.md`: como rodar, validar e resolver falhas.
-- `04-backlog.md`: o que ainda precisa ser tratado.
-- `05-historico.md`: o que mudou e quando.
-- `06-inventario.md`: evidencias detalhadas coletadas por auditoria.
+## Update Rules
 
-## Como Atualizar
+- Changed product behavior or business rule: update `01-overview.md`.
+- Changed flow, module responsibility, configuration, or side effect: update
+  `02-architecture.md`.
+- Changed commands, setup, validation, logs, or troubleshooting: update
+  `03-operations.md`.
+- Made an important behavior or architecture decision: update `04-decisions.md`.
+- Found a risk, debt, or future improvement: update `05-backlog.md`.
+- Ran a meaningful audit or changed the reviewed surface: update
+  `06-inventory.md`.
+- Changed human setup or operating instructions: update `README.md`.
+- Changed AI onboarding or safety rules: update `CODEX_START_HERE.md`.
 
-- Para coletar evidencias antes de editar, rode:
+## Security Rules
 
-```powershell
-python C:\Users\lucas.silva\.codex\skills\project-context-auditor\scripts\audit_project_context.py .
-```
+- Do not include secrets or real credential values.
+- Do not read or summarize `.env`, `config/*.env`, cookies, tokens, browser
+  profile data, operational CSVs, or generated queue data.
+- Treat `downloads/`, `email_queue/`, `logs/`, `perfil_soft4/`, `.agents/`,
+  `.codex-audit/`, `.venv/`, and `__pycache__/` as generated/runtime paths.
 
-- Use `.codex-audit/project-context-audit.json` e `.codex-audit/project-context-audit.md` como apoio local.
-- Confira o codigo antes de transformar qualquer item da auditoria em documentacao permanente.
-- Mudou comportamento? Atualize `01-projeto.md`, `02-arquitetura.md` e, se afetar usuario, `README.md`.
-- Mudou comando, dependencia, validacao ou operacao? Atualize `03-runbook.md` e `README.md`.
-- Mudou risco, TODO ou plano futuro? Atualize `04-backlog.md`.
-- Mudanca relevante concluida? Registre em `05-historico.md`.
-- Inventario tecnico novo? Atualize `06-inventario.md` com data, comandos e fonte.
-
-## Regras
-
-- Nao incluir segredos nem valores reais de credenciais.
-- Nao documentar suposicoes como fatos.
-- Manter comandos compativeis com PowerShell.
-- Tratar `downloads/`, `email_queue/`, `perfil_soft4/` e `__pycache__/` como artefatos de runtime.

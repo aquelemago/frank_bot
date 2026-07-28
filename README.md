@@ -1,41 +1,31 @@
-# Automacao Soft4 - Exportacao CSV Por Atendente
+# Automacao Soft4 - CSV Por Atendente
 
-Automacao Python para acessar a fila de atendimento do Soft4/Mainhardt, baixar o CSV filtrado de chamados sem interacao do atendente, separar a fila por atendente e enviar e-mails via Office365 com os anexos correspondentes. Ao final, tambem envia um relatorio consolidado para a gestora.
+Automacao Python para acessar a fila de atendimento do Soft4/Mainhardt, baixar o
+CSV de chamados sem interacao do atendente, aplicar filtro local por dias uteis,
+separar a fila por atendente e enviar e-mails via SMTP com os anexos
+correspondentes. Em execucao real, tambem envia um relatorio consolidado para a
+gestora.
 
-## Leitura Para IA
+## Para Agentes De IA
 
-Agentes de IA devem comecar por `CODEX_START_HERE.md`.
-Este `README.md` e apenas o guia humano e operacional.
+Comece por `CODEX_START_HERE.md`.
 
-Nao leia, imprima ou resuma valores de `.env` ou `config/*.env`.
+Regras importantes:
 
-## Objetivo
-
-O fluxo operacional atual:
-
-1. Carrega configuracoes locais.
-2. Abre Chromium via Playwright em modo headless.
-3. Reutiliza a sessao persistente do Soft4 quando possivel.
-4. Faz login automaticamente quando a sessao expira.
-5. Acessa a fila de atendimento.
-6. Executa a pesquisa filtrada por chamados sem interacao do atendente.
-7. Baixa o CSV por POST autenticado.
-8. Mantem apenas o CSV completo mais recente em `downloads/`.
-9. Cria uma fila nova em `email_queue/YYYYMMDD_HHMMSS/`.
-10. Gera um CSV por atendente.
-11. Envia e-mail individual para cada atendente.
-12. Envia relatorio consolidado para a gestora.
-13. Registra status `pending`, `sent` ou `failed` em JSON.
-14. Remove caches Python locais ao iniciar e finalizar.
+- O codigo e a fonte de verdade.
+- Nao leia, imprima ou resuma valores de `.env` ou `config/*.env`.
+- Nao exponha credenciais, cookies, tokens, perfil do navegador, CSVs
+  operacionais ou dados de fila gerada.
+- Nao rode a automacao real contra Soft4/SMTP sem aprovacao explicita.
 
 ## Requisitos
 
 - Windows com PowerShell.
-- Python 3.11+ funcional.
+- Python 3.11+.
 - Playwright.
 - Chromium instalado pelo Playwright.
 - Acesso ao Soft4/Mainhardt.
-- Conta SMTP Office365 com permissao de envio.
+- Conta SMTP com permissao de envio.
 
 ## Instalacao
 
@@ -44,11 +34,14 @@ python -m pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
-Dependencias declaradas em `requirements.txt`:
+Dependencias declaradas:
 
-- `playwright`
-- `python-dotenv`
-- `requests`
+- `playwright>=1.44.0`
+- `python-dotenv>=1.0.1`
+- `requests>=2.31.0`
+
+Observacao: `requests` esta declarado, mas o codigo atual nao possui import
+direto dele. Confirme impacto operacional antes de remover.
 
 ## Configuracao
 
@@ -80,7 +73,7 @@ Mapeie atendentes em `config/email_atendente.env`:
 EMAIL_NOME_DO_ATENDENTE=atendente@empresa.com.br
 ```
 
-Exemplo de normalizacao:
+Exemplos de normalizacao:
 
 ```text
 Lucas Cabral da Silva -> EMAIL_LUCAS_CABRAL_DA_SILVA
@@ -102,20 +95,21 @@ Compatibilidade legada:
 - `config/email_bot.env` ainda pode fornecer valores SMTP antigos.
 - `EMAIL_REMETENTE` pode ser usado como alternativa para `EMAIL_USUARIO`.
 - `SENHA` pode ser usada como alternativa para `EMAIL_SENHA`.
-- `SMTP_HOST` e `SMTP_PORT` podem ser usados como alternativas para `EMAIL_HOST` e `EMAIL_PORT`.
+- `SMTP_HOST` e `SMTP_PORT` podem ser usados como alternativas para
+  `EMAIL_HOST` e `EMAIL_PORT`.
 
 ## Regra De Dias Uteis
 
-O Soft4 continua sendo consultado com `SOFT4_DIAS_SEM_INTERACAO_ATENDENTE` como
-pre-filtro. Depois do download, a automacao filtra o CSV localmente e so mantem
-chamados com pelo menos esse limite em dias uteis sem interacao.
+O Soft4 e consultado com `SOFT4_DIAS_SEM_INTERACAO_ATENDENTE` como pre-filtro.
+Depois do download, a automacao filtra o CSV localmente e so mantem chamados com
+pelo menos esse limite em dias uteis sem interacao.
 
 A contagem:
 
 - comeca no dia seguinte a ultima interacao;
 - inclui a data atual quando ela for dia util;
 - ignora sabados, domingos e feriados nacionais do Brasil;
-- ignora tambem datas configuradas em `SOFT4_FERIADOS_ADICIONAIS`.
+- ignora datas configuradas em `SOFT4_FERIADOS_ADICIONAIS`.
 
 Configure `CSV_COLUNA_ULTIMA_INTERACAO` se o CSV exportado trouxer uma coluna
 especifica de ultima interacao. Quando essa coluna nao existe, a automacao usa a
@@ -126,39 +120,44 @@ virgula nos formatos `AAAA-MM-DD` ou `DD/MM/AAAA`.
 
 ## Execucao
 
+Execucao real:
+
 ```powershell
 python main.py
 ```
 
-Para baixar e processar o CSV, criar a fila e simular uma execucao real sem
-enviar nenhum e-mail:
+Dry-run:
 
 ```powershell
 python main.py --dry-run
 ```
 
-Nesse modo, a automacao registra nos logs quais e-mails individuais seriam
-enviados e qual relatorio gerencial seria enviado. Os e-mails de atendimento
-nao sao enviados para atendentes nem gestora; apos uma simulacao bem-sucedida,
-apenas uma confirmacao e enviada para `lucas.silva@mainhardt.com.br`. Os itens
-da fila permanecem como `pending`.
+O dry-run acessa o Soft4, baixa e filtra o CSV, cria a fila e registra nos logs
+quais envios seriam feitos. Ele nao envia e-mails individuais nem relatorio
+gerencial; apos uma simulacao bem-sucedida, envia apenas uma confirmacao para
+`lucas.silva@mainhardt.com.br`. Os itens da fila permanecem como `pending`.
 
-Para enviar apenas um e-mail de teste SMTP para o atendente Lucas Silva:
+Teste SMTP:
 
 ```powershell
 python tools/send_test_email.py
 ```
 
 Esse comando nao acessa o Soft4 e nao baixa CSV. Ele usa somente as
-configuracoes SMTP de `.env` ou `config/email_bot.env`.
+configuracoes SMTP de `.env` ou `config/email_bot.env`. Para enviar a outro
+destinatario:
+
+```powershell
+python tools/send_test_email.py --to pessoa@empresa.com.br
+```
 
 Codigos de saida:
 
-- `0`: automacao finalizada com sucesso.
-- `1`: falha geral de automacao.
+- `0`: sucesso.
+- `1`: falha geral.
 - `2`: falha de configuracao.
 
-## Testes E Validacao
+## Validacao
 
 Validacao rapida de sintaxe:
 
@@ -178,14 +177,6 @@ Alternativa:
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-Auditoria leve do projeto:
-
-```powershell
-python C:\Users\lucas.silva\.codex\skills\softdesk-python-qa\scripts\audit_project.py .
-```
-
-Nao rode a automacao real contra Soft4/SMTP sem confirmar que as credenciais e destinatarios estao corretos.
-
 ## Estrutura
 
 ```text
@@ -196,45 +187,18 @@ Nao rode a automacao real contra Soft4/SMTP sem confirmar que as credenciais e d
 |-- requirements.txt
 |-- codex-context/
 |   |-- README.md
-|   |-- 01-projeto.md
-|   |-- 02-arquitetura.md
-|   |-- 03-runbook.md
-|   |-- 04-backlog.md
-|   |-- 05-historico.md
-|   `-- 06-inventario.md
+|   |-- 01-overview.md
+|   |-- 02-architecture.md
+|   |-- 03-operations.md
+|   |-- 04-decisions.md
+|   |-- 05-backlog.md
+|   `-- 06-inventory.md
+|-- docs/
+|   `-- superpowers/specs/
 |-- app/
-|   |-- __init__.py
-|   |-- auth.py
-|   |-- business_days.py
-|   |-- cleanup.py
-|   |-- csv_utils.py
-|   |-- downloader.py
-|   |-- email_queue.py
-|   |-- mailer.py
-|   |-- main.py
-|   `-- settings.py
-|-- config/
-|   |-- email_bot.env
-|   `-- email_atendente.env
-|-- downloads/
-|-- email_queue/
-|-- perfil_soft4/
-`-- tests/
+|-- tests/
+`-- tools/
 ```
-
-## Modulos Principais
-
-- `main.py`: ponto de entrada publico; chama `app.main.main()`.
-- `app/main.py`: interpreta `--dry-run` e orquestra setup, login, download,
-  fila, envio e limpeza.
-- `app/settings.py`: carrega `.env`, arquivos legados, dataclasses e diretorios.
-- `app/auth.py`: gerencia Playwright, sessao persistente, login e headers.
-- `app/downloader.py`: executa POST autenticado e salva o CSV completo.
-- `app/csv_utils.py`: normaliza chaves, le CSV e resolve colunas.
-- `app/email_queue.py`: separa CSV por atendente e grava metadados.
-- `app/mailer.py`: monta e envia e-mails SMTP; o e-mail individual ao atendente
-  informa chamados sem interacao ha 3 dias ou mais e pede revisao prioritaria.
-- `app/cleanup.py`: remove `__pycache__` fora de `.venv` e `perfil_soft4`.
 
 ## Saidas Geradas
 
@@ -253,42 +217,35 @@ email_queue/YYYYMMDD_HHMMSS/
 `-- <atendente>.json
 ```
 
-`queue.json` resume a execucao. Cada `<atendente>.json` registra destinatario, CSV, quantidade de registros, status e erro quando houver.
-
-## Logs
-
-Os logs sao exibidos no terminal e gravados em:
+Logs:
 
 ```text
 logs/frank_bot.log
 ```
 
-O arquivo possui rotacao automatica ao atingir 5 MB, mantendo ate cinco
-arquivos anteriores.
+O log tem rotacao automatica ao atingir 5 MB e mantem ate cinco arquivos
+anteriores.
 
-Exemplos esperados:
+## Documentacao Tecnica
 
-```text
-[INFO] Iniciando automacao
-[INFO] Acessando fila de atendimento
-[INFO] Sessao reutilizada
-[INFO] CSV baixado
-[INFO] Fila de email criada
-[INFO] Email enviado
-[INFO] Automacao finalizada
-```
+- `CODEX_START_HERE.md`: entrada segura para IA.
+- `codex-context/README.md`: indice tecnico.
+- `codex-context/01-overview.md`: objetivo, escopo, regras de negocio, entradas
+  e saidas.
+- `codex-context/02-architecture.md`: fluxo, modulos, configuracao e efeitos
+  colaterais.
+- `codex-context/03-operations.md`: runbook, validacao e troubleshooting.
+- `codex-context/04-decisions.md`: decisoes arquiteturais e comportamentais.
+- `codex-context/05-backlog.md`: riscos, debitos e melhorias.
+- `codex-context/06-inventory.md`: inventario auditavel do estado atual.
 
 ## Cuidados Operacionais
 
 - `.env` e `config/*.env` contem dados sensiveis.
 - `perfil_soft4/` guarda sessao persistente do Chromium.
-- `downloads/` e `email_queue/` sao recriados parcialmente a cada execucao.
+- `downloads/`, `email_queue/` e `logs/` podem conter dados operacionais.
 - O navegador roda com `headless=True`.
 - Nao alterar seletores de login sem testar contra a tela real.
 - Nao remover `perfil_soft4/` sem necessidade; isso pode exigir novo login.
-- Nao enviar testes para SMTP real sem monkeypatch/mock.
+- Nao enviar testes para SMTP real sem confirmacao dos destinatarios.
 
-## Documentacao De Contexto
-
-Agentes de IA devem iniciar por `CODEX_START_HERE.md`.
-O indice tecnico oficial fica em `codex-context/README.md`.
