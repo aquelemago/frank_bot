@@ -152,4 +152,45 @@ Cada entrada contem: data, contexto, decisao, impacto, status.
 - **Status**: aceito. Refletido em `app/infra/fs.py` e no shim de
   `app/settings.py`.
 
+### 2026-07-30 — Microdecisao na Tarefa 5: `reports.py` nao usa `queue.grouping.group_by_attendant`
+
+- **Contexto**: o plano original previa que `reports.py` (no novo pacote
+  `app/mailer/`) usaria `app.queue.grouping.group_by_attendant` para
+  agrupar atendentes no relatorio gerencial. Porem os dois
+  agrupamentos historicos tinham comportamento **diferente**:
+  - `email_queue._group_by_attendant` descarta linhas com atendente
+    vazio (continue).
+  - `mailer._build_manager_report_sections` atribui `"Sem atendente"`
+    como chave quando vazio (preserva a linha).
+- **Decisao**: `app/mailer/reports.py` **mantem o loop local** com
+  fallback `"Sem atendente"` (copia fiel do `_build_manager_report_sections`
+  original). **Nao** chama `queue.grouping.group_by_attendant`. Isso
+  preserva exatamente o HTML e as contagens do relatorio gerencial.
+- **Impacto**: o helper `group_by_attendant` em `queue.grouping`
+  continua sendo usado apenas por `queue.repository` (fila de envio
+  individual), como antes. A "unificacao" dos dois agrupamentos
+  ficaria como backlog futuro — **fora do escopo** desta refatoracao,
+  pois unifica-los exigiria escolher uma das duas regras, o que e
+  alteracao de comportamento.
+- **Status**: aceito. Registrado em `app/mailer/reports.py` e
+  refletido tambem em `codex-context/02-architecture.md`.
+
+### 2026-07-30 — Microdecisao na Tarefa 5: alias `_send_message` no `__init__.py` do mailer
+
+- **Contexto**: o `mailer` original tinha a funcao local
+  `_send_message` e os 4 testes de mailer fazem
+  `patch("app.mailer._send_message", capture_send)`. No novo pacote,
+  a funcao SMTP foi movida para `app/mailer/smtp.py` com nome publico
+  `send_message` (sem underscore). Quebraria os patches.
+- **Decisao**: `app/mailer/__init__.py` importa
+  `from app.mailer.smtp import send_message as _send_message` e as 4
+  funcoes publicas chamam `_send_message(...)`. Isso mantem o ponto
+  de patch `app.mailer._send_message` funcionando identico, sem expor
+  um nome publico indesejado fora do pacote.
+- **Impacto**: os patches de teste continuam apontando para
+  `app.mailer._send_message` (mesmo caminho apos o rename
+  `mailer_pkg` -> `mailer`). Nenhum teste precisou trocar o alvo do
+  patch entre a fase intermediaria e a final.
+- **Status**: aceito. Implementado em `app/mailer/__init__.py`.
+
 

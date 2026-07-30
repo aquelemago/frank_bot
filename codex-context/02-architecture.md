@@ -78,9 +78,24 @@ main.py
   `app.queue.grouping.group_by_attendant`,
   `app.queue.attendant_emails.load_attendant_emails`, and
   `app.infra.fs.remove_readonly`.
-- `app/mailer.py`: HTML e-mail bodies, CSV attachments, multiple recipient
-  parsing by comma or semicolon, SMTP TLS login, attendant e-mails, manager
-  report, dry-run confirmation, and SMTP test e-mail.
+- `app/mailer/`: package providing e-mail transport, templates, and manager
+  report assembly. The four public send functions live in
+  `app/mailer/__init__.py`.
+  - `app/mailer/smtp.py`: `EmailSendError`, `send_message` (SMTP TLS login),
+    `parse_recipients`, `build_attachment`.
+  - `app/mailer/templates.py`: pure `render_*` functions returning HTML for
+    the attendant, test, dry-run, and manager-report e-mails. HTML entities
+    and styles preserved from the former `app/mailer.py`.
+  - `app/mailer/reports.py`: `build_manager_report_sections` and helpers
+    for reading the CSV and assembling per-attendant HTML tables. Keeps
+    the historical `"Sem atendente"` fallback for rows without an attendant
+    (intentionally different from `app.queue.grouping.group_by_attendant`,
+    which discards rows without an attendant).
+  - `app/mailer/__init__.py`: public send functions
+    (`send_attendant_csv_email`, `send_test_email`,
+    `send_dry_run_success_email`, `send_manager_report_email`). Calls the
+    transport via the module-local `_send_message` alias so test patches
+    against `app.mailer._send_message` keep working.
 - `app/cleanup.py`: shim reexporting `cleanup_runtime_residue` from
   `app/infra/cleanup` (kept for backwards compatibility during the refactor).
 - `tools/send_test_email.py`: operational SMTP test script.

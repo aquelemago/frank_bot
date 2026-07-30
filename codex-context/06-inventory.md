@@ -37,7 +37,10 @@ Python entrypoints and modules:
 - `app/queue/attendant_emails.py`
 - `app/queue/repository.py`
 - `app/main.py`
-- `app/mailer.py`
+- `app/mailer/__init__.py` (was `app/mailer.py`: public send functions)
+- `app/mailer/reports.py`
+- `app/mailer/smtp.py`
+- `app/mailer/templates.py`
 - `app/settings.py` (shim reexporting `PROJECT_ROOT`, `ConfigError`, dataclasses,
   `load_settings`, `load_email_settings`, and `setup_logging` from
   `app/config/*` and `app/infra/logging_setup`)

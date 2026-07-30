@@ -17,7 +17,7 @@
 | 2 | `app/config/` (models + loader) | concluida | `5d83761` | 2026-07-30 |
 | 3 | `app/csv/` (io + filter) | concluida | `7010b6b` | 2026-07-30 |
 | 4 | `app/queue/` (grouping + attendant_emails + repository) | concluida | `0399d47` | 2026-07-30 |
-| 5 | `app/mailer/` (smtp + templates + reports) | pendente | — | — |
+| 5 | `app/mailer/` (smtp + templates + reports) | concluida | pendente | 2026-07-30 |
 | 6 | `app/soft4/` (browser + downloader) | pendente | — | — |
 | 7 | `app/orchestrator/` (run isolado) | pendente | — | — |
 | 8 | `app/services/` facade + limpeza de shims | pendente | — | — |
@@ -26,16 +26,16 @@
 
 ## Pendencias
 
-- Nenhuma tecnica. Tarefas 0, 1, 2, 3 e 4 concluidas e validadas.
+- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4 e 5 concluidas e validadas.
 - Apenas operacional: o operador, se desejar, pode rodar `python main.py
   --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
 
 ## Proxima acao
 
-Commit da Tarefa 4 com a mensagem
-`refactor: etapa 4 - app/queue (grouping + attendant_emails + repository)`.
+Commit da Tarefa 5 com a mensagem
+`refactor: etapa 5 - app/mailer (smtp + templates + reports)`.
 Encerrar a execucao e aguardar confirmacao do operador para iniciar a
-Tarefa 5.
+Tarefa 6.
 
 ## Log de alteracoes da etapa
 
@@ -94,5 +94,64 @@ Validacao:
 - `test_build_queue_groups_by_attendant_and_tracks_missing_email` verde
   (confirma fila identica: Ana Silva com 2 chamados, Bruno Souza em
   `missing_recipients`).
+
+### Tarefa 5 — `app/mailer/`
+
+Estrategia anti-colisao (registrada em DECISIONS.md):
+- Criado pacote temporario `app/mailer_pkg/` com 4 modulos.
+- Atualizados importadores para `app.mailer_pkg`.
+- Validados testes (12 OK).
+- Deletado `app/mailer.py`.
+- Renomeado `app/mailer_pkg/` -> `app/mailer/`.
+- Voltados imports para `app.mailer`.
+- Validados testes novamente (12 OK).
+
+Criados (4 modulos em `app/mailer/`):
+- `app/mailer/__init__.py` — 4 funcoes publicas
+  (`send_attendant_csv_email`, `send_test_email`,
+  `send_dry_run_success_email`, `send_manager_report_email`) e o alias
+  `_send_message` (preserva ponto de patch dos testes
+  `patch("app.mailer._send_message", ...)`).
+- `app/mailer/smtp.py` — `EmailSendError`, `send_message` (SMTP TLS),
+  `parse_recipients`, `build_attachment`.
+- `app/mailer/templates.py` — 4 funcoes `render_*` puras retornando HTML
+  identico ao anterior (entidades `&aacute;`, `&ccedil;`, etc.
+  preservadas).
+- `app/mailer/reports.py` — `build_manager_report_sections` e helpers.
+  **Preserva** o fallback `"Sem atendente"` (regra do mailer, diferente
+  do `queue.grouping.group_by_attendant` que descarta vazios).
+  Importa `read_csv_rows`, `CsvReadError`, `resolve_column` de
+  `app.csv.io` (nao mais de `app.csv_utils`).
+
+Deletado:
+- `app/mailer.py` (substituido pelo pacote `app/mailer/`).
+
+Importadores atualizados:
+- `app/main.py`, `tools/send_test_email.py`,
+  `tests/test_email_queue_and_mailer.py` agora importam de `app.mailer`
+  (direto). Os patches de teste `patch("app.main.<X>")` continuam
+  funcionando (simbolos ficam no namespace de `app.main`).
+- Os 4 `patch("app.mailer._send_message")` voltaram ao ponto final
+  `app.mailer._send_message` (alias no `__init__.py`).
+
+Microdecisao registrada em DECISIONS.md: `reports.py` **não** usa
+`app.queue.grouping.group_by_attendant` (que descarta linhas sem
+atendente); manteve o loop local com fallback `"Sem atendente"` para
+preservar exatamente o comportamento histórico do relatorio gerencial.
+A unificacao dos agrupamentos ficaria como possivel backlog, mas
+**fora do escopo** desta refatoracao (seria alteracao de comportamento
+do relatorio).
+
+Documentacao:
+- `codex-context/02-architecture.md` atualizado com o pacote `app/mailer/`.
+- `codex-context/06-inventory.md` inventario atualizado com os 4 novos
+  arquivos.
+
+Validacao:
+- `python -m compileall app tests tools`: OK.
+- `python tests/run_unittest_discovery.py`: **12 OK**.
+- Os 4 testes de mailer (`test_attendant_email_*`, `test_manager_report_*`,
+  `test_test_email_*`, `test_dry_run_success_*`) validam substrings dos
+  HTMLs, subjects, `From`/`To` — todos verdes.
 
 
