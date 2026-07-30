@@ -5,12 +5,12 @@ import json
 import logging
 import os
 import shutil
-import stat
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from app.csv_utils import CsvReadError, normalize_key, read_csv_rows, resolve_column
+from app.infra.fs import remove_readonly
 from app.settings import EmailQueueSettings
 
 
@@ -154,18 +154,10 @@ def _clear_previous_queue_dirs(base_dir: Path) -> None:
     removed = 0
     for item in base_dir.iterdir():
         if item.is_dir():
-            shutil.rmtree(item, onerror=_remove_readonly)
+            shutil.rmtree(item, onerror=remove_readonly)
             removed += 1
     if removed:
         LOGGER.info("Filas antigas removidas: %s", removed)
-
-
-def _remove_readonly(function, path, exc_info) -> None:
-    try:
-        os.chmod(path, stat.S_IWRITE)
-        function(path)
-    except Exception:
-        raise exc_info[1]
 
 
 def _resolve_attendant_column(fieldnames: list[str], configured_name: str) -> str:

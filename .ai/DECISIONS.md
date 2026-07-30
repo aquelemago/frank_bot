@@ -125,4 +125,31 @@ Cada entrada contem: data, contexto, decisao, impacto, status.
 
 ## Log de alteracoes
 
-(Em aberto. Cada etapa adiciona uma entrada apos a validacao.)
+### 2026-07-30 — Microdecisao na Tarefa 1: `PROJECT_ROOT` movido para `app/infra/fs`
+
+- **Contexto**: a Tarefa 1 planejava mover `setup_logging` de `app/settings.py`
+  para `app/infra/logging_setup.py`, preservando `PROJECT_ROOT` em settings
+  (pois `setup_logging` referencia `PROJECT_ROOT` para o caminho de logs).
+  Porem, se `app/settings.py` importasse `setup_logging` de
+  `app.infra.logging_setup`, e este importasse `PROJECT_ROOT` de
+  `app.settings`, criaria dependencia circular.
+- **Decisao**: `PROJECT_ROOT` foi movido para `app/infra/fs.py` (moduo sem
+  dependencias do projeto), mantendo o MESMO valor
+  (`Path(__file__).resolve().parent.parent` em `app/settings.py` ==
+  `Path(__file__).resolve().parent.parent.parent` em `app/infra/fs.py` ==
+  `.../frank_bot`). `app/settings.py` passou a importar e reexportar
+  `PROJECT_ROOT` de `app.infra.fs` para preservar todos os imports legados
+  (`from app.settings import PROJECT_ROOT`, `from app.settings import
+  ConfigError, PROJECT_ROOT, load_settings` em `app/main.py`).
+- **Impacto**: antecipacao parcial da Tarefa 2 (que moveria tambem
+  `PROJECT_ROOT` para `app/config/loader.py`). Na Tarefa 2, `PROJECT_ROOT`
+  sera reexportado por `app/config/loader` (a partir de `app.infra.fs`) e
+  por `app/settings.py` (tambem a partir de `app.infra.fs`); ou seja, a
+  Tarefa 2 nao remvera de mover `PROJECT_ROOT` novamente. Ajuste a ser
+  registrado no PROGRESS da Tarefa 2.
+- **Validacao**: `python -m compileall` e `python tests/run_unittest_discovery.py`
+  passaram apos a movimentacao (12/12 OK).
+- **Status**: aceito. Refletido em `app/infra/fs.py` e no shim de
+  `app/settings.py`.
+
+

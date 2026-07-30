@@ -22,11 +22,22 @@ main.py
 
 - `main.py`: public script entrypoint; disables bytecode writes and returns
   `app.main.main()` as the process exit code.
-- `app/main.py`: CLI parsing, orchestration, logging setup, cleanup,
-  authentication, CSV download, local filtering, queue creation, dry-run branch,
-  real e-mail branch, and exit-code handling.
+- `app/main.py`: CLI parsing, orchestration, cleanup, authentication, CSV
+  download, local filtering, queue creation, dry-run branch, real e-mail
+  branch, and exit-code handling. Logging setup and cleanup are now
+  imported from `app.infra`.
 - `app/settings.py`: dataclasses, environment loading, legacy configuration
-  compatibility, runtime directory creation, and rotating file logging.
+  compatibility, runtime directory creation. Rotating file logging moved to
+  `app/infra/logging_setup.py`; `setup_logging` is reexported here for
+  compatibility. `PROJECT_ROOT` now defined in `app/infra/fs.py` and
+  reexported here.
+- `app/infra/__init__.py`: package marker for cross-cutting infrastructure.
+- `app/infra/fs.py`: `PROJECT_ROOT` and `remove_readonly` filesystem helper
+  reused by `app/infra/cleanup` and `app/email_queue`.
+- `app/infra/logging_setup.py`: `setup_logging` with terminal stream and
+  rotating file handler under `logs/frank_bot.log`.
+- `app/infra/cleanup.py`: `cleanup_runtime_residue` removing `__pycache__`
+  directories outside `.venv` and `perfil_soft4`.
 - `app/auth.py`: `Soft4Browser`, persistent Chromium context, login detection,
   login execution, session reuse, cookies, CSRF token extraction, and headers.
 - `app/downloader.py`: Soft4 queue payload, authenticated browser-side `fetch`,
@@ -37,11 +48,12 @@ main.py
   and column resolution.
 - `app/email_queue.py`: attendant e-mail loading, grouping, old queue cleanup,
   per-attendant CSV/JSON creation, queue summary, and item status updates.
+  `remove_readonly` is imported from `app/infra/fs` (no longer duplicated).
 - `app/mailer.py`: HTML e-mail bodies, CSV attachments, multiple recipient
   parsing by comma or semicolon, SMTP TLS login, attendant e-mails, manager
   report, dry-run confirmation, and SMTP test e-mail.
-- `app/cleanup.py`: removal of `__pycache__` directories outside `.venv` and
-  `perfil_soft4`.
+- `app/cleanup.py`: shim reexporting `cleanup_runtime_residue` from
+  `app/infra/cleanup` (kept for backwards compatibility during the refactor).
 - `tools/send_test_email.py`: operational SMTP test script.
 
 ## External System

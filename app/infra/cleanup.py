@@ -1,0 +1,27 @@
+from __future__ import annotations
+
+import logging
+import shutil
+from pathlib import Path
+
+from app.infra.fs import remove_readonly
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+def cleanup_runtime_residue(project_root: Path) -> None:
+    """Remove artefatos locais que podem sobrar entre execucoes."""
+    _remove_pycache(project_root)
+
+
+def _remove_pycache(project_root: Path) -> None:
+    removed = 0
+    for path in project_root.rglob("__pycache__"):
+        if ".venv" in path.parts or "perfil_soft4" in path.parts:
+            continue
+        if path.is_dir():
+            shutil.rmtree(path, onerror=remove_readonly)
+            removed += 1
+    if removed:
+        LOGGER.info("Caches Python removidos: %s", removed)

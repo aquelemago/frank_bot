@@ -12,19 +12,20 @@ from app.business_days import (
     montar_feriados,
     parse_feriados_adicionais,
 )
-from app.cleanup import cleanup_runtime_residue
 from app.downloader import SessionExpiredError, download_csv
 from app.email_queue import (
     build_attendant_email_queue,
     mark_queue_item_failed,
     mark_queue_item_sent,
 )
+from app.infra.cleanup import cleanup_runtime_residue
+from app.infra.logging_setup import setup_logging
 from app.mailer import (
     send_attendant_csv_email,
     send_dry_run_success_email,
     send_manager_report_email,
 )
-from app.settings import ConfigError, PROJECT_ROOT, load_settings, setup_logging
+from app.settings import ConfigError, PROJECT_ROOT, load_settings
 
 
 LOGGER = logging.getLogger(__name__)

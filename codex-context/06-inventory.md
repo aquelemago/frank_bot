@@ -23,13 +23,17 @@ Python entrypoints and modules:
 - `app/__init__.py`
 - `app/auth.py`
 - `app/business_days.py`
-- `app/cleanup.py`
+- `app/cleanup.py` (shim reexporting `cleanup_runtime_residue` from `app/infra/cleanup`)
 - `app/csv_utils.py`
 - `app/downloader.py`
 - `app/email_queue.py`
-- `app/mailer.py`
 - `app/main.py`
-- `app/settings.py`
+- `app/mailer.py`
+- `app/settings.py` (reexports `PROJECT_ROOT` and `setup_logging` from `app/infra`)
+- `app/infra/__init__.py`
+- `app/infra/cleanup.py`
+- `app/infra/fs.py`
+- `app/infra/logging_setup.py`
 
 Tests:
 
