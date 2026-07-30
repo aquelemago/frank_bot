@@ -13,7 +13,7 @@
 | Tarefa | Titulo | Status | Commit | Validado em |
 |---|---|---|---|---|
 | 0 | Estabelecer memoria `.ai/` e `docs/refactoring-plan.md` | concluida | `e489113` | 2026-07-30 |
-| 1 | `app/infra/` (logging + cleanup + fs) | concluida | pendente | 2026-07-30 |
+| 1 | `app/infra/` (logging + cleanup + fs) | concluida | `1eb47ef` | 2026-07-30 |
 | 2 | `app/config/` (models + loader) | pendente | — | — |
 | 3 | `app/csv/` (io + filter) | pendente | — | — |
 | 4 | `app/queue/` (grouping + attendant_emails + repository) | pendente | — | — |
