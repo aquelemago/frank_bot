@@ -59,9 +59,25 @@ main.py
 - `app/csv/filter.py`: business-day calculation, Brazilian national
   holidays, additional holidays, date parsing, and local CSV filtering.
   (Formerly `app/business_days.py`.)
-- `app/email_queue.py`: attendant e-mail loading, grouping, old queue cleanup,
-  per-attendant CSV/JSON creation, queue summary, and item status updates.
-  `remove_readonly` is imported from `app/infra/fs` (no longer duplicated).
+- `app/email_queue.py`: shim reexporting the queue symbols from
+  `app/queue/repository`, `app/queue/attendant_emails`,
+  `app/queue/grouping`, plus `normalize_key` from `app/csv/io` and
+  `EmailQueueSettings` from `app/config/models`. (Formerly contained the
+  full queue implementation with attendant e-mail loading, grouping,
+  old queue cleanup, per-attendant CSV/JSON creation, queue summary, and
+  item status updates.)
+- `app/queue/__init__.py`: package marker for the e-mail queue domain.
+- `app/queue/grouping.py`: `group_by_attendant` (discards rows without
+  attendant, preserving historical behavior).
+- `app/queue/attendant_emails.py`: `load_attendant_emails`, reading
+  `config/email_atendente.env` and `EMAIL_*` environment variables.
+- `app/queue/repository.py`: `EmailQueue`, `EmailQueueItem`,
+  `EmailQueueError`, `build_attendant_email_queue`, item status markers,
+  `slugify`, and helpers for queue directory creation, previous-queue
+  cleanup, attendant CSV/JSON writing, and queue summary. Uses
+  `app.queue.grouping.group_by_attendant`,
+  `app.queue.attendant_emails.load_attendant_emails`, and
+  `app.infra.fs.remove_readonly`.
 - `app/mailer.py`: HTML e-mail bodies, CSV attachments, multiple recipient
   parsing by comma or semicolon, SMTP TLS login, attendant e-mails, manager
   report, dry-run confirmation, and SMTP test e-mail.

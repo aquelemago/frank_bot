@@ -16,7 +16,7 @@
 | 1 | `app/infra/` (logging + cleanup + fs) | concluida | `1eb47ef` | 2026-07-30 |
 | 2 | `app/config/` (models + loader) | concluida | `5d83761` | 2026-07-30 |
 | 3 | `app/csv/` (io + filter) | concluida | `7010b6b` | 2026-07-30 |
-| 4 | `app/queue/` (grouping + attendant_emails + repository) | pendente | — | — |
+| 4 | `app/queue/` (grouping + attendant_emails + repository) | concluida | pendente | 2026-07-30 |
 | 5 | `app/mailer/` (smtp + templates + reports) | pendente | — | — |
 | 6 | `app/soft4/` (browser + downloader) | pendente | — | — |
 | 7 | `app/orchestrator/` (run isolado) | pendente | — | — |
@@ -26,52 +26,73 @@
 
 ## Pendencias
 
-- Nenhuma tecnica. Tarefas 0, 1, 2 e 3 concluidas e validadas.
+- Nenhuma tecnica. Tarefas 0, 1, 2, 3 e 4 concluidas e validadas.
 - Apenas operacional: o operador, se desejar, pode rodar `python main.py
   --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
 
 ## Proxima acao
 
-Commit da Tarefa 3 com a mensagem
-`refactor: etapa 3 - app/csv (io + filter)`. Encerrar a execucao
-e aguardar confirmacao do operador para iniciar a Tarefa 4.
+Commit da Tarefa 4 com a mensagem
+`refactor: etapa 4 - app/queue (grouping + attendant_emails + repository)`.
+Encerrar a execucao e aguardar confirmacao do operador para iniciar a
+Tarefa 5.
 
 ## Log de alteracoes da etapa
 
-### Tarefa 3 — `app/csv/`
+### Tarefa 4 — `app/queue/`
 
 Criados:
-- `app/csv/__init__.py` (vazio)
-- `app/csv/io.py` — copia integral de `app/csv_utils.py` (`CsvReadError`,
-  `normalize_key`, `read_csv_rows`, `resolve_column`, `_cell_has_content`).
-- `app/csv/filter.py` — copia integral de `app/business_days.py`, trocando
-  `from app.csv_utils import ...` por `from app.csv.io import ...`.
-  (`BusinessDayFilterError`, `eh_dia_util`,
-  `contar_dias_uteis_sem_interacao`, `chamado_deve_ser_processado`,
-  `feriados_nacionais_brasil`, `montar_feriados`,
-  `parse_feriados_adicionais`,
-  `filtrar_csv_por_dias_uteis_sem_interacao`, e helpers privados).
+- `app/queue/__init__.py` (vazio)
+- `app/queue/grouping.py` — `group_by_attendant(rows, attendant_column)`.
+  Preserva a regra do antigo `_group_by_attendant` do email_queue:
+  **descarta** linhas com atendente vazio (diferente do mailer, que usa
+  `"Sem atendente"` como fallback — preservado, nao tocado nesta tarefa).
+- `app/queue/attendant_emails.py` — `load_attendant_emails` (movido do
+  email_queue). Importa `normalize_key` de `app.csv.io`.
+- `app/queue/repository.py` — `EmailQueue`, `EmailQueueItem`,
+  `EmailQueueError`, `build_attendant_email_queue`,
+  `mark_queue_item_sent`, `mark_queue_item_failed`, `slugify`, e os
+  helpers privados (`_create_unique_queue_dir`, `_clear_previous_queue_dirs`,
+  `_resolve_attendant_column`, `_write_attendant_csv`, `_write_metadata`,
+  `_write_queue_summary`).
+  Usa:
+  - `group_by_attendant` de `app.queue.grouping`;
+  - `load_attendant_emails` de `app.queue.attendant_emails`;
+  - `remove_readonly` de `app.infra.fs`;
+  - `normalize_key`, `read_csv_rows`, `resolve_column`, `CsvReadError`
+    de `app.csv.io`;
+  - `EmailQueueSettings` de `app.config.models`.
 
-Shims:
-- `app/csv_utils.py` reexporta `CsvReadError`, `normalize_key`,
-  `read_csv_rows`, `resolve_column` de `app.csv.io`.
-- `app/business_days.py` reexporta os 8 simbolos publicos de
-  `app.csv.filter`.
+Shim:
+- `app/email_queue.py` reexporta `EmailQueue`, `EmailQueueError`,
+  `EmailQueueItem`, `EmailQueueSettings`, `build_attendant_email_queue`,
+  `group_by_attendant`, `load_attendant_emails`,
+  `mark_queue_item_failed`, `mark_queue_item_sent`, `normalize_key`,
+  `slugify`.
 
-Imports legados preservados:
-- `app/email_queue.py` e `app/mailer.py` continuam
-  `from app.csv_utils import` (via shim).
-- `app/main.py` continua `from app.business_days import` (via shim).
-- `tests/test_email_queue_and_mailer.py` continua
-  `from app.business_days import` (via shim).
+Imports legados preservados (via shim):
+- `app/main.py`: `build_attendant_email_queue`,
+  `mark_queue_item_failed`, `mark_queue_item_sent`.
+- `tests/test_main_and_logging.py`: `EmailQueue`, `EmailQueueItem`.
+- `tests/test_email_queue_and_mailer.py`: `build_attendant_email_queue`,
+  `normalize_key`.
+
+Pontos de atencao (registrados em DECISIONS.md):
+- Diferenca de comportamento entre os dois agrupamentos (email_queue
+  descarta vazios; mailer usa "Sem atendente") — preservada. O mailer
+  ainda NAO usa `group_by_attendant` ( fica para a Tarefa 5).
 
 Documentacao:
 - `codex-context/02-architecture.md` atualizado.
-- `codex-context/06-inventory.md` inventario atualizado com os 3 novos
-  arquivos (`app/csv/__init__.py`, `app/csv/io.py`, `app/csv/filter.py`).
+- `codex-context/06-inventory.md` inventario atualizado com os 4 novos
+  arquivos (`app/queue/__init__.py`, `app/queue/grouping.py`,
+  `app/queue/attendant_emails.py`, `app/queue/repository.py`).
 
 Validacao:
 - `python -m compileall app tests tools`: OK.
 - `python tests/run_unittest_discovery.py`: **12 OK**.
+- `test_build_queue_groups_by_attendant_and_tracks_missing_email` verde
+  (confirma fila identica: Ana Silva com 2 chamados, Bruno Souza em
+  `missing_recipients`).
 
 

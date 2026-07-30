@@ -29,7 +29,13 @@ Python entrypoints and modules:
 - `app/csv/io.py`
 - `app/csv/filter.py`
 - `app/downloader.py`
-- `app/email_queue.py`
+- `app/email_queue.py` (shim reexporting queue symbols from `app/queue/*`,
+  `normalize_key` from `app/csv/io`, and `EmailQueueSettings` from
+  `app/config/models`)
+- `app/queue/__init__.py`
+- `app/queue/grouping.py`
+- `app/queue/attendant_emails.py`
+- `app/queue/repository.py`
 - `app/main.py`
 - `app/mailer.py`
 - `app/settings.py` (shim reexporting `PROJECT_ROOT`, `ConfigError`, dataclasses,
