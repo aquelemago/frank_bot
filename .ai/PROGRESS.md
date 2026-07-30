@@ -18,7 +18,7 @@
 | 3 | `app/csv/` (io + filter) | concluida | `7010b6b` | 2026-07-30 |
 | 4 | `app/queue/` (grouping + attendant_emails + repository) | concluida | `0399d47` | 2026-07-30 |
 | 5 | `app/mailer/` (smtp + templates + reports) | concluida | `62e50c3` | 2026-07-30 |
-| 6 | `app/soft4/` (browser + downloader) | concluida | pendente | 2026-07-30 |
+| 6 | `app/soft4/` (browser + downloader) | concluida | `a9aaf59` | 2026-07-30 |
 | 7 | `app/orchestrator/` (run isolado) | pendente | — | — |
 | 8 | `app/services/` facade + limpeza de shims | pendente | — | — |
 | 9 | Reorganizacao dos testes por tema | pendente | — | — |
