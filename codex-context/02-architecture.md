@@ -49,10 +49,16 @@ main.py
   login execution, session reuse, cookies, CSRF token extraction, and headers.
 - `app/downloader.py`: Soft4 queue payload, authenticated browser-side `fetch`,
   retry handling, previous CSV cleanup, and CSV validation.
-- `app/business_days.py`: business-day calculation, Brazilian national
+- `app/business_days.py`: shim reexporting business-day helpers from
+  `app/csv/filter`.
+- `app/csv_utils.py`: shim reexporting CSV reading helpers from
+  `app/csv/io`.
+- `app/csv/__init__.py`: package marker for CSV concerns.
+- `app/csv/io.py`: CSV delimiter detection, row reading, key normalization,
+  and column resolution. (Formerly `app/csv_utils.py`.)
+- `app/csv/filter.py`: business-day calculation, Brazilian national
   holidays, additional holidays, date parsing, and local CSV filtering.
-- `app/csv_utils.py`: CSV delimiter detection, row reading, key normalization,
-  and column resolution.
+  (Formerly `app/business_days.py`.)
 - `app/email_queue.py`: attendant e-mail loading, grouping, old queue cleanup,
   per-attendant CSV/JSON creation, queue summary, and item status updates.
   `remove_readonly` is imported from `app/infra/fs` (no longer duplicated).
