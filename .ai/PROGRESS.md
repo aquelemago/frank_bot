@@ -18,7 +18,7 @@
 | 3 | `app/csv/` (io + filter) | concluida | `7010b6b` | 2026-07-30 |
 | 4 | `app/queue/` (grouping + attendant_emails + repository) | concluida | `0399d47` | 2026-07-30 |
 | 5 | `app/mailer/` (smtp + templates + reports) | concluida | `62e50c3` | 2026-07-30 |
-| 6 | `app/soft4/` (browser + downloader) | pendente | — | — |
+| 6 | `app/soft4/` (browser + downloader) | concluida | pendente | 2026-07-30 |
 | 7 | `app/orchestrator/` (run isolado) | pendente | — | — |
 | 8 | `app/services/` facade + limpeza de shims | pendente | — | — |
 | 9 | Reorganizacao dos testes por tema | pendente | — | — |
@@ -26,16 +26,16 @@
 
 ## Pendencias
 
-- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4 e 5 concluidas e validadas.
+- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5 e 6 concluidas e validadas.
 - Apenas operacional: o operador, se desejar, pode rodar `python main.py
   --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
 
 ## Proxima acao
 
-Commit da Tarefa 5 com a mensagem
-`refactor: etapa 5 - app/mailer (smtp + templates + reports)`.
+Commit da Tarefa 6 com a mensagem
+`refactor: etapa 6 - app/soft4 (browser + downloader)`.
 Encerrar a execucao e aguardar confirmacao do operador para iniciar a
-Tarefa 6.
+Tarefa 7.
 
 ## Log de alteracoes da etapa
 
@@ -153,5 +153,46 @@ Validacao:
 - Os 4 testes de mailer (`test_attendant_email_*`, `test_manager_report_*`,
   `test_test_email_*`, `test_dry_run_success_*`) validam substrings dos
   HTMLs, subjects, `From`/`To` — todos verdes.
+
+### Tarefa 6 — `app/soft4/`
+
+Criados:
+- `app/soft4/__init__.py` (vazio)
+- `app/soft4/browser.py` — copia integral de `app/auth.py`
+  (`Soft4Browser`, `AuthenticatedSession`, `AuthenticationError`,
+  `extract_csrf_token`, `build_headers`). Importa `Soft4Settings` de
+  `app.config.loader` (caminho novo, preservado via reexportacao
+  em `loader`).
+- `app/soft4/downloader.py` — copia integral de `app/downloader.py`
+  (`CsvDownloadError`, `SessionExpiredError`, `download_csv` e helpers).
+  Troca `from app.auth import AuthenticatedSession` por
+  `from app.soft4.browser import AuthenticatedSession`.
+
+Shims:
+- `app/auth.py` reexporta `AuthenticationError`, `AuthenticatedSession`,
+  `Soft4Browser`, `build_headers`, `extract_csrf_token` de
+  `app.soft4.browser`.
+- `app/downloader.py` reexporta `CsvDownloadError`, `SessionExpiredError`,
+  `download_csv` de `app.soft4.downloader`.
+
+Imports legados preservados (via shim):
+- `app/main.py`: `from app.auth import Soft4Browser` e
+  `from app.downloader import SessionExpiredError, download_csv`.
+
+Patches de teste preservados:
+- `test_dry_run_builds_queue_without_sending_email` faz
+  `patch("app.main.Soft4Browser")` e `patch("app.main.download_csv")`,
+  que continuam funcionando pois os simbolos permanecem no namespace
+  de `app.main` (importados via shim).
+
+Documentacao:
+- `codex-context/02-architecture.md` atualizado com o pacote `app/soft4/`.
+- `codex-context/06-inventory.md` inventario atualizado com os 3 novos
+  arquivos (`app/soft4/__init__.py`, `app/soft4/browser.py`,
+  `app/soft4/downloader.py`).
+
+Validacao:
+- `python -m compileall app tests tools`: OK.
+- `python tests/run_unittest_discovery.py`: **12 OK**.
 
 

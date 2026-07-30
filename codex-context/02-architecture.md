@@ -45,10 +45,19 @@ main.py
   rotating file handler under `logs/frank_bot.log`.
 - `app/infra/cleanup.py`: `cleanup_runtime_residue` removing `__pycache__`
   directories outside `.venv` and `perfil_soft4`.
-- `app/auth.py`: `Soft4Browser`, persistent Chromium context, login detection,
-  login execution, session reuse, cookies, CSRF token extraction, and headers.
-- `app/downloader.py`: Soft4 queue payload, authenticated browser-side `fetch`,
-  retry handling, previous CSV cleanup, and CSV validation.
+- `app/auth.py`: shim reexporting `Soft4Browser`, `AuthenticatedSession`,
+  `AuthenticationError`, `extract_csrf_token`, `build_headers` from
+  `app/soft4/browser`.
+- `app/downloader.py`: shim reexporting `CsvDownloadError`,
+  `SessionExpiredError`, `download_csv` from `app/soft4/downloader`.
+- `app/soft4/__init__.py`: package marker for the Soft4 external
+  integration (Playwright + Soft4 endpoints).
+- `app/soft4/browser.py`: `Soft4Browser`, persistent Chromium context,
+  login detection, login execution, session reuse, cookies, CSRF token
+  extraction, and headers. (Formerly `app/auth.py`.)
+- `app/soft4/downloader.py`: Soft4 queue payload, authenticated
+  browser-side `fetch`, retry handling, previous CSV cleanup, and CSV
+  validation. (Formerly `app/downloader.py`.)
 - `app/business_days.py`: shim reexporting business-day helpers from
   `app/csv/filter`.
 - `app/csv_utils.py`: shim reexporting CSV reading helpers from

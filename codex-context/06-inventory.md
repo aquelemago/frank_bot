@@ -21,14 +21,20 @@ Python entrypoints and modules:
 - `main.py`
 - `tools/send_test_email.py`
 - `app/__init__.py`
-- `app/auth.py`
+- `app/auth.py` (shim reexporting `Soft4Browser`, `AuthenticatedSession`,
+  `AuthenticationError`, `extract_csrf_token`, `build_headers` from
+  `app/soft4/browser`)
 - `app/business_days.py` (shim reexporting business-day helpers from `app/csv/filter`)
 - `app/cleanup.py` (shim reexporting `cleanup_runtime_residue` from `app/infra/cleanup`)
 - `app/csv_utils.py` (shim reexporting CSV helpers from `app/csv/io`)
 - `app/csv/__init__.py`
 - `app/csv/io.py`
 - `app/csv/filter.py`
-- `app/downloader.py`
+- `app/downloader.py` (shim reexporting `CsvDownloadError`,
+  `SessionExpiredError`, `download_csv` from `app/soft4/downloader`)
+- `app/soft4/__init__.py`
+- `app/soft4/browser.py`
+- `app/soft4/downloader.py`
 - `app/email_queue.py` (shim reexporting queue symbols from `app/queue/*`,
   `normalize_key` from `app/csv/io`, and `EmailQueueSettings` from
   `app/config/models`)
