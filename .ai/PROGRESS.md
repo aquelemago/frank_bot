@@ -15,7 +15,7 @@
 | 0 | Estabelecer memoria `.ai/` e `docs/refactoring-plan.md` | concluida | `e489113` | 2026-07-30 |
 | 1 | `app/infra/` (logging + cleanup + fs) | concluida | `1eb47ef` | 2026-07-30 |
 | 2 | `app/config/` (models + loader) | concluida | `5d83761` | 2026-07-30 |
-| 3 | `app/csv/` (io + filter) | concluida | pendente | 2026-07-30 |
+| 3 | `app/csv/` (io + filter) | concluida | `7010b6b` | 2026-07-30 |
 | 4 | `app/queue/` (grouping + attendant_emails + repository) | pendente | — | — |
 | 5 | `app/mailer/` (smtp + templates + reports) | pendente | — | — |
 | 6 | `app/soft4/` (browser + downloader) | pendente | — | — |
