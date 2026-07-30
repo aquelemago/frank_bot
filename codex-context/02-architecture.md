@@ -26,11 +26,18 @@ main.py
   download, local filtering, queue creation, dry-run branch, real e-mail
   branch, and exit-code handling. Logging setup and cleanup are now
   imported from `app.infra`.
-- `app/settings.py`: dataclasses, environment loading, legacy configuration
-  compatibility, runtime directory creation. Rotating file logging moved to
-  `app/infra/logging_setup.py`; `setup_logging` is reexported here for
-  compatibility. `PROJECT_ROOT` now defined in `app/infra/fs.py` and
-  reexported here.
+- `app/settings.py`: shim reexporting all settings symbols from
+  `app/config/models` (dataclasses), `app/config/loader`
+  (`load_settings`, `load_email_settings`, `ConfigError`, `PROJECT_ROOT`)
+  and `app/infra/logging_setup` (`setup_logging`). Exists only for backwards
+  compatibility during the refactor.
+- `app/config/__init__.py`: package marker for configuration.
+- `app/config/models.py`: dataclasses (`Soft4Settings`, `EmailSettings`,
+  `EmailQueueSettings`, `ManagerReportSettings`, `AppSettings`).
+- `app/config/loader.py`: `PROJECT_ROOT` reexport, `ConfigError`,
+  environment variable helpers `_env*`, `load_settings` (with the
+  side effect of creating `downloads/`, `email_queue/`, `perfil_soft4/`),
+  and `load_email_settings`.
 - `app/infra/__init__.py`: package marker for cross-cutting infrastructure.
 - `app/infra/fs.py`: `PROJECT_ROOT` and `remove_readonly` filesystem helper
   reused by `app/infra/cleanup` and `app/email_queue`.

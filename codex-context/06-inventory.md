@@ -29,7 +29,12 @@ Python entrypoints and modules:
 - `app/email_queue.py`
 - `app/main.py`
 - `app/mailer.py`
-- `app/settings.py` (reexports `PROJECT_ROOT` and `setup_logging` from `app/infra`)
+- `app/settings.py` (shim reexporting `PROJECT_ROOT`, `ConfigError`, dataclasses,
+  `load_settings`, `load_email_settings`, and `setup_logging` from
+  `app/config/*` and `app/infra/logging_setup`)
+- `app/config/__init__.py`
+- `app/config/loader.py`
+- `app/config/models.py`
 - `app/infra/__init__.py`
 - `app/infra/cleanup.py`
 - `app/infra/fs.py`
