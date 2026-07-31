@@ -77,6 +77,26 @@ def _dispatch_requester_reports(
             failures.append(f"Relatorio solicitante: {error}")
         return
 
+    full_report_recipient = getattr(settings.requester_report, "full_report_recipient", "")
+    if full_report_recipient:
+        if dry_run:
+            LOGGER.info(
+                "Dry-run: relatorio do solicitante com todos os chamados seria enviado para %s",
+                full_report_recipient,
+            )
+        else:
+            try:
+                send_requester_report_email(
+                    settings=settings.email,
+                    recipient=full_report_recipient,
+                    requester_name=settings.requester_report.name,
+                    source_csv=requester_csv_path,
+                    no_interaction_days=settings.soft4.no_interaction_requester_days,
+                    exported_at=exported_at,
+                )
+            except Exception as error:
+                failures.append(f"Relatorio solicitante {full_report_recipient}: {error}")
+
     id_column = getattr(settings.requester_report, "id_column", "ID")
     output_dir = (
         settings.requester_downloads_dir

@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 from app.infra.logging_setup import setup_logging
 from app.main import main
-from app.orchestrator.run import run
+from app.orchestrator.run import _dispatch_requester_reports, run
 from app.queue.repository import EmailQueue, EmailQueueItem
 
 
@@ -69,6 +69,7 @@ class MainRunTests(unittest.TestCase):
                     name="Solicitante",
                     last_interaction_column="ultima interacao",
                     id_column="ID",
+                    full_report_recipient="",
                 ),
                 downloads_dir=root / "downloads",
                 requester_downloads_dir=root / "downloads",
@@ -116,6 +117,64 @@ class MainRunTests(unittest.TestCase):
             self.assertIn("Dry-run: email individual seria enviado para Ana", logs)
             self.assertIn("Dry-run: relatorio do solicitante seria enviado para", logs)
             self.assertIn("Dry-run bem-sucedido", logs)
+
+    def test_dispatch_requester_reports_sends_full_report_to_copy_recipient(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source_csv = root / "solicitante.csv"
+            source_csv.write_text("ID\n1\n", encoding="utf-8")
+            delivery_csv = root / "bruna.csv"
+            delivery_csv.write_text("ID\n1\n", encoding="utf-8")
+            settings = SimpleNamespace(
+                soft4=SimpleNamespace(
+                    api_key="chave",
+                    no_interaction_requester_days=5,
+                ),
+                email=SimpleNamespace(),
+                requester_report=SimpleNamespace(
+                    recipient="solicitante@example.com",
+                    name="Solicitante",
+                    id_column="ID",
+                    full_report_recipient="lcabral570@gmail.com",
+                ),
+                requester_downloads_dir=root / "entregas",
+            )
+            delivery = SimpleNamespace(
+                solicitante="Bruna",
+                recipient="bruna@example.com",
+                csv_path=delivery_csv,
+                row_count=1,
+            )
+
+            with (
+                patch(
+                    "app.orchestrator.run.build_requester_deliveries",
+                    return_value=[delivery],
+                ) as build_mock,
+                patch("app.orchestrator.run.send_requester_report_email") as send_mock,
+            ):
+                failures: list[str] = []
+                _dispatch_requester_reports(
+                    settings,
+                    source_csv,
+                    datetime(2026, 6, 23, 8, 0, 0),
+                    dry_run=False,
+                    failures=failures,
+                )
+
+            self.assertEqual(failures, [])
+            self.assertEqual(send_mock.call_count, 2)
+            sent_recipients = [call.kwargs["recipient"] for call in send_mock.call_args_list]
+            self.assertIn("bruna@example.com", sent_recipients)
+            self.assertIn("lcabral570@gmail.com", sent_recipients)
+            full_report_call = [
+                call
+                for call in send_mock.call_args_list
+                if call.kwargs["recipient"] == "lcabral570@gmail.com"
+            ][0]
+            self.assertEqual(full_report_call.kwargs["source_csv"], source_csv)
+            self.assertEqual(full_report_call.kwargs["requester_name"], "Solicitante")
+            build_mock.assert_called_once()
 
     def test_setup_logging_writes_to_rotating_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

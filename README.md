@@ -71,8 +71,9 @@ SOFT4_TP_LISTAGEM_SOLICITANTE=SEM_INTERACAO_SOLICITANTE
 SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE=5
 CSV_COLUNA_ID_CHAMADO=ID
 SOFTDESK_API_KEY=
-EMAIL_SOLICITANTE_RELATORIO=lcabra570@gmail.com
+EMAIL_SOLICITANTE_RELATORIO=lcabral570@gmail.com
 NOME_SOLICITANTE_RELATORIO=Teste
+EMAIL_SOLICITANTE_TODOS_CHAMADOS=lcabral570@gmail.com
 ```
 
 Quando `SOFTDESK_API_KEY` estiver preenchida, o relatorio do solicitante e
@@ -80,8 +81,10 @@ enviado individualmente para cada solicitante. A automacao consulta a API do
 Softdesk (`GET /api/api.php/chamado?codigo=<numero do chamado>`, cabecalho
 `hash-api`) para obter o e-mail do solicitante de cada chamado do CSV, agrupa os
 chamados por e-mail e envia um relatorio por destinatario. `CSV_COLUNA_ID_CHAMADO`
-indica a coluna com o numero do chamado. Sem a chave, mantem o comportamento
-legado de enviar um unico relatorio para `EMAIL_SOLICITANTE_RELATORIO`.
+indica a coluna com o numero do chamado. Alem dos solicitantes, o relatorio com
+todos os chamados tambem e enviado para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`
+(quando preenchida). Sem a chave, mantem o comportamento legado de enviar um
+unico relatorio para `EMAIL_SOLICITANTE_RELATORIO`.
 
 Mapeie atendentes em `config/email_atendente.env`:
 

@@ -122,6 +122,7 @@ def load_settings() -> AppSettings:
             name=_env("NOME_SOLICITANTE_RELATORIO", "Teste"),
             last_interaction_column=_env("CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE", "ultima interacao solicitante"),
             id_column=_env("CSV_COLUNA_ID_CHAMADO", "ID"),
+            full_report_recipient=_env("EMAIL_SOLICITANTE_TODOS_CHAMADOS", ""),
         ),
         downloads_dir=downloads_dir,
         requester_downloads_dir=downloads_dir,
