@@ -10,6 +10,7 @@ from app.config.models import (
     EmailQueueSettings,
     EmailSettings,
     ManagerReportSettings,
+    RequesterReportSettings,
     Soft4Settings,
 )
 from app.infra.fs import PROJECT_ROOT
@@ -88,6 +89,8 @@ def load_settings() -> AppSettings:
             csv_path=_env("SOFT4_CSV_PATH", "/chamado/fila-de-atendimento/csv"),
             listing_type=_env("SOFT4_TP_LISTAGEM", "SEM_INTERACAO_ATENDENTE"),
             no_interaction_attendant_days=_env_int("SOFT4_DIAS_SEM_INTERACAO_ATENDENTE", "3"),
+            requester_listing_type=_env("SOFT4_TP_LISTAGEM_SOLICITANTE", "SEM_INTERACAO_SOLICITANTE"),
+            no_interaction_requester_days=_env_int("SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE", "5"),
             additional_holidays=_env("SOFT4_FERIADOS_ADICIONAIS", ""),
             usuario=_env("SOFT4_USUARIO", required=True),
             senha=_env("SOFT4_SENHA", required=True),
@@ -112,7 +115,13 @@ def load_settings() -> AppSettings:
             recipient=_env("EMAIL_GESTORA_RELATORIO", "francieli.cazuni@unus.solutions"),
             name=_env("NOME_GESTORA_RELATORIO", "Francieli"),
         ),
+        requester_report=RequesterReportSettings(
+            recipient=_env("EMAIL_SOLICITANTE_RELATORIO", "lcabra570@gmail.com", required=True),
+            name=_env("NOME_SOLICITANTE_RELATORIO", "Teste"),
+            last_interaction_column=_env("CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE", "ultima interacao solicitante"),
+        ),
         downloads_dir=downloads_dir,
+        requester_downloads_dir=downloads_dir,
     )
 
     settings.downloads_dir.mkdir(parents=True, exist_ok=True)
