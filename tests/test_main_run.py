@@ -14,7 +14,7 @@ from app.orchestrator.run import run
 from app.queue.repository import EmailQueue, EmailQueueItem
 
 
-class MainAndLoggingTests(unittest.TestCase):
+class MainRunTests(unittest.TestCase):
     def tearDown(self) -> None:
         self._close_frank_bot_handlers()
 

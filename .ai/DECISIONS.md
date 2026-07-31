@@ -245,4 +245,20 @@ Cada entrada contem: data, contexto, decisao, impacto, status.
 - **Status**: aceito. Refletido em `app/services/__init__.py` e nas
   docs (`02-architecture.md`, `06-inventory.md`, `README.md`).
 
+### 2026-07-31 — Microdecisao na Tarefa 9: patch do mailer permanece em `app.mailer._send_message`
+
+- **Contexto**: o TODO da Tarefa 9 previa
+  `patch("app.mailer.smtp._send_message", ...)` nos 4 testes de mailer.
+  Porem `app/mailer/smtp.py` exporta apenas o nome publico
+  `send_message` (nao existe `_send_message` em `smtp.py`); o alias
+  `_send_message` vive no namespace de `app/mailer/__init__.py` (decisao
+  da Tarefa 5) e e quem as funcoes de envio chamam.
+- **Decisao**: manter o patch em `patch("app.mailer._send_message", ...)`
+  nos testes de `tests/test_mailer.py`. O plano do TODO ficou
+  desatualizado em relacao a implementacao real da Tarefa 5; a decisao
+  registrada na Tarefa 5 prevalece.
+- **Impacto**: nenhuma assertiva mudou na reorganizacao; apenas o
+  agrupamento dos testes em arquivos tematicos.
+- **Status**: aceito. Implementado em `tests/test_mailer.py`.
+
 

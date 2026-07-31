@@ -50,8 +50,10 @@ Python entrypoints and modules:
 Tests:
 
 - `tests/run_unittest_discovery.py`
-- `tests/test_email_queue_and_mailer.py`
-- `tests/test_main_and_logging.py`
+- `tests/test_csv_filter.py`
+- `tests/test_email_queue.py`
+- `tests/test_mailer.py`
+- `tests/test_main_run.py`
 
 Documentation:
 

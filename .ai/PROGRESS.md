@@ -21,20 +21,20 @@
 | 6 | `app/soft4/` (browser + downloader) | concluida | `a9aaf59` | 2026-07-30 |
 | 7 | `app/orchestrator/` (run isolado) | concluida | `5ca027d` | 2026-07-30 |
 | 8 | `app/services/` facade + limpeza de shims | concluida | `6b40fba` | 2026-07-31 |
-| 9 | Reorganizacao dos testes por tema | pendente | — | — |
+| 9 | Reorganizacao dos testes por tema | concluida | pendente | 2026-07-31 |
 | 10 | Sincronizar documentacao tecnica | pendente | — | — |
 
 ## Pendencias
 
-- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5, 6, 7 e 8 concluidas e
+- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5, 6, 7, 8 e 9 concluidas e
   validadas.
 - Apenas operacional: o operador, se desejar, pode rodar `python main.py
   --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
 
 ## Proxima acao
 
-Aguardar confirmacao do operador para iniciar a Tarefa 9 (reorganizacao
-dos testes por tema, opcional).
+Aguardar confirmacao do operador para iniciar a Tarefa 10 (sincronizar
+documentacao tecnica: README, CODEX_START_HERE, codex-context).
 
 ## Log de alteracoes da etapa
 
@@ -284,5 +284,36 @@ Documentacao:
 Validacao:
 - `python -m compileall app tests tools`: OK.
 - `python tests/run_unittest_discovery.py`: **12 OK**.
+
+### Tarefa 9 — Reorganizacao dos testes por tema
+
+Criados (4 arquivos tematicos, mesma cobertura, 12 testes):
+
+- `tests/test_csv_filter.py` (3 testes): contagem de dias uteis,
+  filtro por data de ultima interacao, feriados configuraveis.
+  Imports de `app.csv.filter`.
+- `tests/test_email_queue.py` (2 testes): construcao da fila por
+  atendente + `normalize_key`. Imports de `app.queue.repository`,
+  `app.csv.io` e `app.config.models`.
+- `tests/test_mailer.py` (4 testes): relatorio gerencial, e-mail do
+  atendente, e-mail de teste, confirmacao de dry-run. Patch mantido em
+  `patch("app.mailer._send_message", ...)` (alias no `__init__.py`;
+  o TODO da Tarefa 9 previa `app.mailer.smtp._send_message`, mas esse
+  simbolo nao existe — `smtp.py` exporta `send_message` publico; a
+  microdecisao da Tarefa 5 prevalece e o patch via alias e o correto).
+- `tests/test_main_run.py` (3 testes): CLI dry-run, dry-run sem envio
+  (15 patches em `app.orchestrator.run`), setup_logging rotativo.
+
+Deletados:
+- `tests/test_email_queue_and_mailer.py`
+- `tests/test_main_and_logging.py`
+
+Documentacao:
+- `codex-context/06-inventory.md`: lista de testes atualizada.
+
+Validacao:
+- `python -m compileall app tests tools`: OK.
+- `python tests/run_unittest_discovery.py`: **12 OK** (discovery por
+  padrao `test*.py` encontra os 4 novos arquivos).
 
 
