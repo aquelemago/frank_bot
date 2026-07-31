@@ -26,14 +26,45 @@
 
 ## Pendencias
 
-- Nenhuma tecnica. **Refatoracao de 10 etapas concluida** (tarefas 0 a 10).
-- Apenas operacional: o operador, se desejar, pode rodar `python main.py
-  --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
+- Nenhuma tecnica. **Refatoracao de 10 etapas concluida** (tarefas 0 a 10)
+  e **validacao operacional (dry-run real) concluida com sucesso** em
+  2026-07-31 (ver "Validacao operacional" abaixo).
+- Nenhuma pendencia operacional remanescente.
+
+## Validacao operacional (dry-run real — 2026-07-31)
+
+Rodado com `.env` criado pelo operador: `python main.py --dry-run`.
+
+- **Exit 0**. Fluxo completo executado com sucesso:
+  - `setup_logging` + `cleanup_runtime_residue` + `load_settings` (com
+    `.env` presente).
+  - Soft4: sessao expirada -> login realizado -> CSV filtrado via POST
+    (1469 bytes) -> `downloads/fila_atendimento_20260731_081451.csv`.
+  - Filtro de dias uteis: **12 de 12** registros mantidos.
+  - Fallback de coluna acionado (esperado): "ultima interacao" nao
+    encontrada -> inferencia por "Dias sem interacao".
+  - Fila criada em `email_queue/20260731_081440` com **4 itens**:
+    Juliana Teodoro (2), Lucas Cabral da Silva (1),
+    Maicon De Souza Teodoro (3), Patricia Konig Costa (2).
+  - Aviso (esperado): 3 atendentes sem e-mail configurado (Dietmar
+    Giese, Francieli Cazuni, Rafaela Zen) -> listados, itens
+    individuais nao criados para eles.
+  - Dry-run: 4 e-mails individuais + relatorio gerencial simulados, NAO
+    enviados; fila mantida como `pending`.
+  - Confirmacao de dry-run enviada para
+    `lucas.silva@mainhardt.com.br`; automacao finalizada.
+- Artefatos confirmados (gitignored, working tree limpo):
+  `downloads/fila_atendimento_20260731_081451.csv`,
+  `email_queue/20260731_081440/{queue.json, <atendente>.csv/.json}`.
+- Observacao de console: caracteres acentuados aparecem como `�` ao
+  redirecionar `2>&1` no PowerShell (codepage do terminal); os logs em
+  arquivo (`logs/frank_bot.log`) sao gravados em UTF-8 correto. Nao e
+  um defeito do codigo.
 
 ## Proxima acao
 
-Refatoracao concluida. Nenhuma tarefa pendente no backlog de refatoracao.
-Validacao final opcional a cargo do operador: `python main.py --dry-run`.
+Refatoracao concluida e validada operacionalmente. Nenhuma tarefa
+pendente. Encerrar a execucao.
 
 ## Log de alteracoes da etapa
 
