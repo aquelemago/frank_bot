@@ -95,6 +95,42 @@ def render_dry_run_success_email(
     """
 
 
+def render_requester_report_email(
+    requester_name: str,
+    exported_at: datetime,
+    no_interaction_days: int,
+    total_rows: int,
+    sections: str,
+) -> str:
+    return f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
+        <p>Ola, {html.escape(requester_name)}.</p>
+
+        <p>
+          Segue o relatorio consolidado dos chamados sem interacao do solicitante ha
+          {no_interaction_days} dias ou mais.
+        </p>
+
+        <p>
+          <strong>Total de chamados:</strong> {total_rows}<br>
+          <strong>Data e hora da exportacao:</strong> {exported_at:%d/%m/%Y %H:%M:%S}
+        </p>
+
+        {sections}
+
+        <p>
+          O CSV completo da exportacao tambem segue em anexo para conferencia ou filtro.
+        </p>
+
+        <p>
+          Esta e uma mensagem automatica da rotina de apoio do Soft4.
+        </p>
+      </body>
+    </html>
+    """
+
+
 def render_manager_report_email(
     manager_name: str,
     exported_at: datetime,
