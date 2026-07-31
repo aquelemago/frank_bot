@@ -3,15 +3,16 @@ from __future__ import annotations
 import csv
 import json
 import logging
-import os
 import shutil
-import stat
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from app.csv_utils import CsvReadError, normalize_key, read_csv_rows, resolve_column
-from app.settings import EmailQueueSettings
+from app.csv.io import CsvReadError, normalize_key, read_csv_rows, resolve_column
+from app.config.models import EmailQueueSettings
+from app.infra.fs import remove_readonly
+from app.queue.attendant_emails import load_attendant_emails
+from app.queue.grouping import group_by_attendant
 
 
 LOGGER = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ def build_attendant_email_queue(
     except CsvReadError as error:
         raise EmailQueueError(str(error)) from error
     attendant_column = _resolve_attendant_column(fieldnames, settings.attendant_column)
-    grouped = _group_by_attendant(rows, attendant_column)
+    grouped = group_by_attendant(rows, attendant_column)
 
     if not grouped:
         raise EmailQueueError("Nenhum registro com atendente foi encontrado no CSV.")
@@ -104,35 +105,6 @@ def mark_queue_item_failed(item: EmailQueueItem, failed_at: datetime, error: Exc
     _write_metadata(item, "failed", failed_at, str(error))
 
 
-def load_attendant_emails(path: Path) -> dict[str, str]:
-    emails: dict[str, str] = {}
-    if path.exists():
-        for line in path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            if key.startswith("EMAIL_") and value.strip():
-                emails[normalize_key(key.removeprefix("EMAIL_"))] = value.strip().strip('"').strip("'")
-
-    reserved = {
-        "EMAIL_HOST",
-        "EMAIL_PORT",
-        "EMAIL_USUARIO",
-        "EMAIL_SENHA",
-        "EMAIL_ATENDENTES_FILE",
-        "EMAIL_FALHAR_SE_ATENDENTE_SEM_EMAIL",
-        "EMAIL_REMETENTE",
-        "EMAIL_GESTORA_RELATORIO",
-        "NOME_GESTORA_RELATORIO",
-    }
-    for key, value in os.environ.items():
-        if key.startswith("EMAIL_") and key not in reserved and value.strip():
-            emails[normalize_key(key.removeprefix("EMAIL_"))] = value.strip()
-
-    return emails
-
-
 def slugify(value: str) -> str:
     slug = normalize_key(value).lower()
     return slug or "atendente"
@@ -154,18 +126,10 @@ def _clear_previous_queue_dirs(base_dir: Path) -> None:
     removed = 0
     for item in base_dir.iterdir():
         if item.is_dir():
-            shutil.rmtree(item, onerror=_remove_readonly)
+            shutil.rmtree(item, onerror=remove_readonly)
             removed += 1
     if removed:
         LOGGER.info("Filas antigas removidas: %s", removed)
-
-
-def _remove_readonly(function, path, exc_info) -> None:
-    try:
-        os.chmod(path, stat.S_IWRITE)
-        function(path)
-    except Exception:
-        raise exc_info[1]
 
 
 def _resolve_attendant_column(fieldnames: list[str], configured_name: str) -> str:
@@ -176,16 +140,6 @@ def _resolve_attendant_column(fieldnames: list[str], configured_name: str) -> st
         raise EmailQueueError(
             f"Coluna de atendente nao encontrada. Configure CSV_COLUNA_ATENDENTE. Colunas: {available}"
         ) from error
-
-
-def _group_by_attendant(rows: list[dict[str, str]], attendant_column: str) -> dict[str, list[dict[str, str]]]:
-    grouped: dict[str, list[dict[str, str]]] = {}
-    for row in rows:
-        attendant = (row.get(attendant_column) or "").strip()
-        if not attendant:
-            continue
-        grouped.setdefault(attendant, []).append(row)
-    return grouped
 
 
 def _write_attendant_csv(

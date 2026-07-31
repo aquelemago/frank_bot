@@ -1,108 +1,22 @@
 from __future__ import annotations
 
-import logging
 import os
-from dataclasses import dataclass
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+from app.config.models import (
+    AppSettings,
+    EmailQueueSettings,
+    EmailSettings,
+    ManagerReportSettings,
+    Soft4Settings,
+)
+from app.infra.fs import PROJECT_ROOT
 
 
 class ConfigError(RuntimeError):
     """Erro de configuracao da aplicacao."""
-
-
-@dataclass(frozen=True)
-class Soft4Settings:
-    base_url: str
-    queue_path: str
-    csv_path: str
-    listing_type: str
-    no_interaction_attendant_days: int
-    additional_holidays: str
-    usuario: str
-    senha: str
-    user_data_dir: Path
-    timeout_seconds: int
-    retries: int
-
-    @property
-    def queue_url(self) -> str:
-        return f"{self.base_url}{self.queue_path}"
-
-    @property
-    def csv_url(self) -> str:
-        return f"{self.base_url}{self.csv_path}"
-
-
-@dataclass(frozen=True)
-class EmailSettings:
-    host: str
-    port: int
-    usuario: str
-    senha: str
-
-
-@dataclass(frozen=True)
-class EmailQueueSettings:
-    queue_dir: Path
-    attendants_file: Path
-    attendant_column: str
-    last_interaction_column: str
-    fail_on_missing_attendant_email: bool
-
-
-@dataclass(frozen=True)
-class ManagerReportSettings:
-    recipient: str
-    name: str
-
-
-@dataclass(frozen=True)
-class AppSettings:
-    soft4: Soft4Settings
-    email: EmailSettings
-    email_queue: EmailQueueSettings
-    manager_report: ManagerReportSettings
-    downloads_dir: Path
-
-
-def setup_logging(log_dir: Path | None = None) -> Path:
-    target_dir = log_dir or PROJECT_ROOT / "logs"
-    target_dir.mkdir(parents=True, exist_ok=True)
-    log_path = target_dir / "frank_bot.log"
-
-    logging.addLevelName(logging.ERROR, "ERRO")
-    logging.addLevelName(logging.WARNING, "AVISO")
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
-
-    if not any(getattr(handler, "_frank_bot_handler", False) for handler in root_logger.handlers):
-        formatter = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        setattr(stream_handler, "_frank_bot_handler", True)
-
-        file_handler = RotatingFileHandler(
-            log_path,
-            maxBytes=5 * 1024 * 1024,
-            backupCount=5,
-            encoding="utf-8",
-        )
-        file_handler.setFormatter(formatter)
-        setattr(file_handler, "_frank_bot_handler", True)
-
-        root_logger.addHandler(stream_handler)
-        root_logger.addHandler(file_handler)
-
-    return log_path
 
 
 def _env(name: str, default: str | None = None, required: bool = False) -> str:

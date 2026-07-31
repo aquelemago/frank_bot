@@ -6,13 +6,18 @@
 - Confirm the exact last-interaction column name in the production Soft4 CSV.
 - Confirm whether `requests` is still needed; the current project files do not
   import it directly.
-- Confirm whether `SOFT4_CSV_PATH` should be used by `app/downloader.py`; the
-  current browser-side fetch uses the literal `/chamado/fila-de-atendimento/csv`
-  path.
+- Confirm whether `SOFT4_CSV_PATH` should be used by `app/soft4/downloader.py`;
+  the current browser-side fetch uses the literal
+  `/chamado/fila-de-atendimento/csv` path.
 - Confirm whether the hard-coded queue payload values for solution groups and
   statuses still match the Soft4 screen.
-- Test headless login with real credentials after any change to `app/auth.py`.
+- Test headless login with real credentials after any change to
+  `app/soft4/browser.py`.
 - Test SMTP with a controlled Office365 account before releasing mailer changes.
+- Unify the two attendant-grouping rules: `app/queue/grouping.group_by_attendant`
+  discards rows without an attendant, while `app/mailer/reports.py` keeps a
+  `"Sem atendente"` fallback. Unifying requires choosing one behavior and is
+  intentionally out of scope of the architecture refactor.
 - Add tests for settings validation and configuration errors.
 - Add tests for CSV delimiter variations.
 - Add tests for multiple recipients parsed by comma and semicolon.

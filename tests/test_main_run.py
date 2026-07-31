@@ -8,12 +8,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from app.email_queue import EmailQueue, EmailQueueItem
-from app.main import main, run
-from app.settings import setup_logging
+from app.infra.logging_setup import setup_logging
+from app.main import main
+from app.orchestrator.run import run
+from app.queue.repository import EmailQueue, EmailQueueItem
 
 
-class MainAndLoggingTests(unittest.TestCase):
+class MainRunTests(unittest.TestCase):
     def tearDown(self) -> None:
         self._close_frank_bot_handlers()
 
@@ -60,22 +61,22 @@ class MainAndLoggingTests(unittest.TestCase):
             browser.__enter__.return_value.ensure_authenticated.return_value = object()
 
             with (
-                patch("app.main.setup_logging"),
-                patch("app.main.cleanup_runtime_residue"),
-                patch("app.main.load_settings", return_value=settings),
-                patch("app.main.Soft4Browser", return_value=browser),
-                patch("app.main.download_csv", return_value=csv_path),
-                patch("app.main.montar_feriados", return_value=set()),
-                patch("app.main.parse_feriados_adicionais", return_value=set()),
-                patch("app.main.filtrar_csv_por_dias_uteis_sem_interacao"),
-                patch("app.main.build_attendant_email_queue", return_value=queue),
-                patch("app.main.send_attendant_csv_email") as attendant_send,
-                patch("app.main.send_manager_report_email") as manager_send,
-                patch("app.main.send_dry_run_success_email") as dry_run_success_send,
-                patch("app.main.mark_queue_item_sent") as mark_sent,
-                patch("app.main.mark_queue_item_failed") as mark_failed,
-                self.assertLogs("app.main", level="INFO") as captured_logs,
-                patch("app.main.datetime") as datetime_mock,
+                patch("app.orchestrator.run.setup_logging"),
+                patch("app.orchestrator.run.cleanup_runtime_residue"),
+                patch("app.orchestrator.run.load_settings", return_value=settings),
+                patch("app.orchestrator.run.Soft4Browser", return_value=browser),
+                patch("app.orchestrator.run.download_csv", return_value=csv_path),
+                patch("app.orchestrator.run.montar_feriados", return_value=set()),
+                patch("app.orchestrator.run.parse_feriados_adicionais", return_value=set()),
+                patch("app.orchestrator.run.filtrar_csv_por_dias_uteis_sem_interacao"),
+                patch("app.orchestrator.run.build_attendant_email_queue", return_value=queue),
+                patch("app.orchestrator.run.send_attendant_csv_email") as attendant_send,
+                patch("app.orchestrator.run.send_manager_report_email") as manager_send,
+                patch("app.orchestrator.run.send_dry_run_success_email") as dry_run_success_send,
+                patch("app.orchestrator.run.mark_queue_item_sent") as mark_sent,
+                patch("app.orchestrator.run.mark_queue_item_failed") as mark_failed,
+                self.assertLogs("app.orchestrator.run", level="INFO") as captured_logs,
+                patch("app.orchestrator.run.datetime") as datetime_mock,
             ):
                 datetime_mock.now.return_value = datetime(2026, 6, 23, 8, 0, 0)
                 exit_code = run(dry_run=True)

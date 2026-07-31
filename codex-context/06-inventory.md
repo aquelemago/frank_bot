@@ -2,7 +2,9 @@
 
 ## Audit Snapshot
 
-- Date: 2026-07-28.
+- Date: 2026-07-28 (original audit); re-verified 2026-07-31 after the 10-step
+  architecture refactor (file list below matches the final tree on branch
+  `feature/refatora-arquitetura`).
 - Source of truth: current Python code, tests, `requirements.txt`, and Git
   metadata.
 - Repository state: this folder is a Git repository. During this audit,
@@ -21,21 +23,39 @@ Python entrypoints and modules:
 - `main.py`
 - `tools/send_test_email.py`
 - `app/__init__.py`
-- `app/auth.py`
-- `app/business_days.py`
-- `app/cleanup.py`
-- `app/csv_utils.py`
-- `app/downloader.py`
-- `app/email_queue.py`
-- `app/mailer.py`
+- `app/csv/__init__.py`
+- `app/csv/io.py`
+- `app/csv/filter.py`
+- `app/soft4/__init__.py`
+- `app/soft4/browser.py`
+- `app/soft4/downloader.py`
+- `app/queue/__init__.py`
+- `app/queue/grouping.py`
+- `app/queue/attendant_emails.py`
+- `app/queue/repository.py`
 - `app/main.py`
-- `app/settings.py`
+- `app/mailer/__init__.py` (was `app/mailer.py`: public send functions)
+- `app/mailer/reports.py`
+- `app/mailer/smtp.py`
+- `app/mailer/templates.py`
+- `app/orchestrator/__init__.py`
+- `app/orchestrator/run.py`
+- `app/services/__init__.py` (facade: mailer send functions + queue symbols)
+- `app/config/__init__.py`
+- `app/config/loader.py`
+- `app/config/models.py`
+- `app/infra/__init__.py`
+- `app/infra/cleanup.py`
+- `app/infra/fs.py`
+- `app/infra/logging_setup.py`
 
 Tests:
 
 - `tests/run_unittest_discovery.py`
-- `tests/test_email_queue_and_mailer.py`
-- `tests/test_main_and_logging.py`
+- `tests/test_csv_filter.py`
+- `tests/test_email_queue.py`
+- `tests/test_mailer.py`
+- `tests/test_main_run.py`
 
 Documentation:
 

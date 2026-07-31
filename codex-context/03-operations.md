@@ -50,7 +50,7 @@ recipient when appropriate.
 Syntax:
 
 ```powershell
-python -m compileall app tests
+python -m compileall app tests tools
 ```
 
 Tests:

@@ -5,44 +5,101 @@
 ```text
 main.py
   -> app.main.main()
-    -> parse --dry-run
-    -> app.main.run(dry_run)
-    -> setup_logging()
-    -> cleanup_runtime_residue()
-    -> load_settings()
-    -> Soft4Browser.ensure_authenticated()
-    -> download_csv()
-    -> filtrar_csv_por_dias_uteis_sem_interacao()
-    -> build_attendant_email_queue()
-    -> dry-run branch OR real SMTP branch
-    -> cleanup_runtime_residue()
+     -> parse --dry-run
+     -> app.main.run -> app.orchestrator.run.run(dry_run)
+        -> setup_logging()
+        -> cleanup_runtime_residue()
+        -> load_settings()
+        -> Soft4Browser.ensure_authenticated()
+        -> download_csv()
+        -> filtrar_csv_por_dias_uteis_sem_interacao()
+        -> build_attendant_email_queue()
+        -> dry-run branch OR real SMTP branch
+        -> cleanup_runtime_residue()
 ```
 
 ## Modules
 
 - `main.py`: public script entrypoint; disables bytecode writes and returns
   `app.main.main()` as the process exit code.
-- `app/main.py`: CLI parsing, orchestration, logging setup, cleanup,
-  authentication, CSV download, local filtering, queue creation, dry-run branch,
-  real e-mail branch, and exit-code handling.
-- `app/settings.py`: dataclasses, environment loading, legacy configuration
-  compatibility, runtime directory creation, and rotating file logging.
-- `app/auth.py`: `Soft4Browser`, persistent Chromium context, login detection,
-  login execution, session reuse, cookies, CSRF token extraction, and headers.
-- `app/downloader.py`: Soft4 queue payload, authenticated browser-side `fetch`,
-  retry handling, previous CSV cleanup, and CSV validation.
-- `app/business_days.py`: business-day calculation, Brazilian national
+- `app/main.py`: CLI parsing only (`argparse` + `--dry-run`); reexports
+  `run` from `app.orchestrator.run` for backwards compatibility.
+- `app/orchestrator/__init__.py`: package marker for orchestration.
+- `app/orchestrator/run.py`: full automation flow (`run()`), the dry-run
+  plan logging helper, hardcoded `DRY_RUN_NOTIFICATION_RECIPIENT`, and
+  exit-code handling (0/1/2). Imports its service layer from
+  `app.services` and its lower-level dependencies from the new package
+  layout (`app.config.loader`, `app.csv.filter`, `app.infra.*`,
+  `app.soft4.browser`, `app.soft4.downloader`). Sets
+  `sys.dont_write_bytecode = True`.
+- `app/services/__init__.py`: facade reexporting the public mailer send
+  functions (`send_attendant_csv_email`, `send_test_email`,
+  `send_dry_run_success_email`, `send_manager_report_email`,
+  `EmailSendError`) and the queue domain symbols
+  (`build_attendant_email_queue`, `mark_queue_item_sent`,
+  `mark_queue_item_failed`, `EmailQueue`, `EmailQueueItem`,
+  `EmailQueueError`). `app/orchestrator/run.py` imports its service
+  layer from here.
+- `app/config/__init__.py`: package marker for configuration.
+- `app/config/models.py`: dataclasses (`Soft4Settings`, `EmailSettings`,
+  `EmailQueueSettings`, `ManagerReportSettings`, `AppSettings`).
+- `app/config/loader.py`: `PROJECT_ROOT` reexport, `ConfigError`,
+  environment variable helpers `_env*`, `load_settings` (with the
+  side effect of creating `downloads/`, `email_queue/`, `perfil_soft4/`),
+  and `load_email_settings`.
+- `app/infra/__init__.py`: package marker for cross-cutting infrastructure.
+- `app/infra/fs.py`: `PROJECT_ROOT` and `remove_readonly` filesystem helper
+  reused by `app/infra/cleanup` and `app/queue/repository`.
+- `app/infra/logging_setup.py`: `setup_logging` with terminal stream and
+  rotating file handler under `logs/frank_bot.log`.
+- `app/infra/cleanup.py`: `cleanup_runtime_residue` removing `__pycache__`
+  directories outside `.venv` and `perfil_soft4`.
+- `app/soft4/__init__.py`: package marker for the Soft4 external
+  integration (Playwright + Soft4 endpoints).
+- `app/soft4/browser.py`: `Soft4Browser`, persistent Chromium context,
+  login detection, login execution, session reuse, cookies, CSRF token
+  extraction, and headers. (Formerly `app/auth.py`.)
+- `app/soft4/downloader.py`: Soft4 queue payload, authenticated
+  browser-side `fetch`, retry handling, previous CSV cleanup, and CSV
+  validation. (Formerly `app/downloader.py`.)
+- `app/csv/__init__.py`: package marker for CSV concerns.
+- `app/csv/io.py`: CSV delimiter detection, row reading, key normalization,
+  and column resolution. (Formerly `app/csv_utils.py`.)
+- `app/csv/filter.py`: business-day calculation, Brazilian national
   holidays, additional holidays, date parsing, and local CSV filtering.
-- `app/csv_utils.py`: CSV delimiter detection, row reading, key normalization,
-  and column resolution.
-- `app/email_queue.py`: attendant e-mail loading, grouping, old queue cleanup,
-  per-attendant CSV/JSON creation, queue summary, and item status updates.
-- `app/mailer.py`: HTML e-mail bodies, CSV attachments, multiple recipient
-  parsing by comma or semicolon, SMTP TLS login, attendant e-mails, manager
-  report, dry-run confirmation, and SMTP test e-mail.
-- `app/cleanup.py`: removal of `__pycache__` directories outside `.venv` and
-  `perfil_soft4`.
-- `tools/send_test_email.py`: operational SMTP test script.
+  (Formerly `app/business_days.py`.)
+- `app/queue/__init__.py`: package marker for the e-mail queue domain.
+- `app/queue/grouping.py`: `group_by_attendant` (discards rows without
+  attendant, preserving historical behavior).
+- `app/queue/attendant_emails.py`: `load_attendant_emails`, reading
+  `config/email_atendente.env` and `EMAIL_*` environment variables.
+- `app/queue/repository.py`: `EmailQueue`, `EmailQueueItem`,
+  `EmailQueueError`, `build_attendant_email_queue`, item status markers,
+  `slugify`, and helpers for queue directory creation, previous-queue
+  cleanup, attendant CSV/JSON writing, and queue summary. Uses
+  `app.queue.grouping.group_by_attendant`,
+  `app.queue.attendant_emails.load_attendant_emails`, and
+  `app.infra.fs.remove_readonly`.
+- `app/mailer/`: package providing e-mail transport, templates, and manager
+  report assembly. The four public send functions live in
+  `app/mailer/__init__.py`.
+  - `app/mailer/smtp.py`: `EmailSendError`, `send_message` (SMTP TLS login),
+    `parse_recipients`, `build_attachment`.
+  - `app/mailer/templates.py`: pure `render_*` functions returning HTML for
+    the attendant, test, dry-run, and manager-report e-mails. HTML entities
+    and styles preserved from the former `app/mailer.py`.
+  - `app/mailer/reports.py`: `build_manager_report_sections` and helpers
+    for reading the CSV and assembling per-attendant HTML tables. Keeps
+    the historical `"Sem atendente"` fallback for rows without an attendant
+    (intentionally different from `app.queue.grouping.group_by_attendant`,
+    which discards rows without an attendant).
+  - `app/mailer/__init__.py`: public send functions
+    (`send_attendant_csv_email`, `send_test_email`,
+    `send_dry_run_success_email`, `send_manager_report_email`). Calls the
+    transport via the module-local `_send_message` alias so test patches
+    against `app.mailer._send_message` keep working.
+- `tools/send_test_email.py`: operational SMTP test script (imports from
+  `app.services` and `app.config.loader`).
 
 ## External System
 

@@ -5,7 +5,7 @@ import logging
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from app.csv_utils import CsvReadError, read_csv_rows, resolve_column
+from app.csv.io import CsvReadError, read_csv_rows, resolve_column
 
 
 LOGGER = logging.getLogger(__name__)

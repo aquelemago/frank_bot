@@ -5,8 +5,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from app.auth import AuthenticatedSession
-from app.settings import Soft4Settings
+from app.config.loader import Soft4Settings
+from app.soft4.browser import AuthenticatedSession
 
 
 LOGGER = logging.getLogger(__name__)

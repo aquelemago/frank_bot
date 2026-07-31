@@ -46,3 +46,38 @@ Decision: use Playwright Chromium with persistent profile data under
 Reason: this allows session reuse and avoids interactive browser operation for
 the routine.
 
+## 2026-07-30 - 10-Step Architectural Refactor (Structure Only)
+
+Decision: reorganize the codebase into layered packages without changing
+behavior, in 10 incremental steps tracked in `.ai/` (plan, TODO, PROGRESS,
+DECISIONS) and `docs/refactoring-plan.md`.
+
+Scope and outcome:
+
+- `app/config/` (settings dataclasses + env loading), `app/csv/` (IO + business
+  day filter), `app/queue/` (e-mail queue domain), `app/mailer/` (SMTP,
+  templates, manager report), `app/soft4/` (Playwright browser + CSV download),
+  `app/infra/` (logging, cleanup, fs), `app/orchestrator/` (isolated `run()`),
+  and `app/services/` (facade).
+- `app/main.py` is CLI-only and reexports `run` from `app.orchestrator.run`.
+- All legacy shims (`app/settings.py`, `app/cleanup.py`, `app/csv_utils.py`,
+  `app/business_days.py`, `app/email_queue.py`, `app/auth.py`,
+  `app/downloader.py`) were removed after imports were migrated.
+- Tests were reorganized by theme into `tests/test_csv_filter.py`,
+  `tests/test_email_queue.py`, `tests/test_mailer.py`, and
+  `tests/test_main_run.py` (same 12 tests, all green).
+- Divergences preserved (see `codex-context/02-architecture.md` and
+  `codex-context/05-backlog.md`): `requests` still declared without direct
+  import; `SOFT4_CSV_PATH` loaded but not used by the fetch; the two
+  attendant-grouping rules (queue discards empty; manager report uses
+  `"Sem atendente"`) intentionally not unified.
+
+Reason: the original flat modules mixed concerns (config + logging, CSV filter +
+file writes, SMTP + templates + report) and duplicated helpers (e.g.
+`_remove_readonly`); layering makes the automation easier to maintain and test
+without altering its observable behavior.
+
+Status: accepted. Completed 2026-07-31. Validated at each step with
+`python -m compileall app tests tools` and `python tests/run_unittest_discovery.py`
+(12/12 OK).
+

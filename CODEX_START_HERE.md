@@ -11,7 +11,8 @@ This is the first file an AI agent should read in this project.
   profile data, operational CSV contents, or generated queue data.
 - Do not run the real automation against Soft4/SMTP without explicit approval of
   environment, credentials, and recipients.
-- Preserve `python main.py` and `app.main.run()` as public entrypoints.
+- Preserve `python main.py` and `app.main.run()` as public entrypoints. The
+  orchestration flow itself lives in `app.orchestrator.run.run()`.
 
 ## Reading Order
 
@@ -33,7 +34,23 @@ This is the first file an AI agent should read in this project.
 ## Current State
 
 - Python automation for exporting the Soft4/Mainhardt support queue as CSV.
-- Main code lives under `app/`.
+- Main code lives under `app/`:
+  - `app/main.py`: CLI only (`argparse` + `--dry-run`); reexports `run`.
+  - `app/orchestrator/run.py`: full automation flow (`run()`), dry-run plan
+    logging, exit codes, hardcoded dry-run recipient.
+  - `app/services/`: facade reexporting mailer send functions and queue
+    symbols; the orchestrator imports its service layer from here.
+  - `app/config/`: settings dataclasses (`models.py`) and env loading
+    (`loader.py`).
+  - `app/csv/`: CSV reading helpers (`io.py`) and business-day/holiday
+    filter (`filter.py`).
+  - `app/queue/`: e-mail queue domain (grouping, attendant e-mails,
+    repository).
+  - `app/mailer/`: SMTP transport (`smtp.py`), HTML templates
+    (`templates.py`), manager report assembly (`reports.py`).
+  - `app/soft4/`: external integration (Playwright browser session and CSV
+    downloader).
+  - `app/infra/`: cross-cutting infrastructure (logging, cleanup, fs).
 - Public command: `python main.py`.
 - Dry-run command: `python main.py --dry-run`.
 - SMTP test command: `python tools/send_test_email.py`.
@@ -46,7 +63,7 @@ This is the first file an AI agent should read in this project.
 ## Safe Commands
 
 ```powershell
-python -m compileall app tests
+python -m compileall app tests tools
 python tests/run_unittest_discovery.py
 ```
 

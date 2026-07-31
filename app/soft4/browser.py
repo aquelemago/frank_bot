@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from playwright.sync_api import BrowserContext, Page, Playwright, sync_playwright
 
-from app.settings import Soft4Settings
+from app.config.loader import Soft4Settings
 
 
 LOGGER = logging.getLogger(__name__)

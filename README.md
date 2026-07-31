@@ -162,7 +162,7 @@ Codigos de saida:
 Validacao rapida de sintaxe:
 
 ```powershell
-python -m compileall app tests
+python -m compileall app tests tools
 ```
 
 Testes unitarios:
@@ -196,6 +196,15 @@ python -m unittest discover -s tests -p "test_*.py" -v
 |-- docs/
 |   `-- superpowers/specs/
 |-- app/
+|   |-- main.py                 # CLI (argparse + --dry-run); reexporta run
+|   |-- orchestrator/           # fluxo da automacao (run)
+|   |-- services/               # facade (envio de e-mail + fila)
+|   |-- config/                 # dataclasses + carregamento de env
+|   |-- csv/                    # leitura de CSV + filtro de dias uteis
+|   |-- queue/                  # dominio da fila de e-mail
+|   |-- mailer/                 # transporte SMTP + templates + relatorio
+|   |-- soft4/                  # integracao externa (Playwright/Soft4)
+|   `-- infra/                  # logging, cleanup e helpers de filesystem
 |-- tests/
 `-- tools/
 ```
