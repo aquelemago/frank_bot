@@ -51,11 +51,25 @@ class MainRunTests(unittest.TestCase):
                 soft4=SimpleNamespace(
                     additional_holidays="",
                     no_interaction_attendant_days=3,
+                    no_interaction_requester_days=5,
+                    requester_listing_type="SEM_INTERACAO_SOLICITANTE",
                 ),
                 email=SimpleNamespace(),
-                email_queue=SimpleNamespace(last_interaction_column="ultima interacao"),
-                manager_report=SimpleNamespace(recipient="gestora@example.com"),
+                email_queue=SimpleNamespace(
+                    last_interaction_column="ultima interacao",
+                    attendant_column="Atendente",
+                ),
+                manager_report=SimpleNamespace(
+                    recipient="gestora@example.com",
+                    name="Gestora",
+                ),
+                requester_report=SimpleNamespace(
+                    recipient="solicitante@example.com",
+                    name="Solicitante",
+                    last_interaction_column="ultima interacao",
+                ),
                 downloads_dir=root / "downloads",
+                requester_downloads_dir=root / "downloads",
             )
             browser = MagicMock()
             browser.__enter__.return_value.ensure_authenticated.return_value = object()
@@ -66,12 +80,14 @@ class MainRunTests(unittest.TestCase):
                 patch("app.orchestrator.run.load_settings", return_value=settings),
                 patch("app.orchestrator.run.Soft4Browser", return_value=browser),
                 patch("app.orchestrator.run.download_csv", return_value=csv_path),
+                patch("app.orchestrator.run.download_csv_as", return_value=csv_path),
                 patch("app.orchestrator.run.montar_feriados", return_value=set()),
                 patch("app.orchestrator.run.parse_feriados_adicionais", return_value=set()),
                 patch("app.orchestrator.run.filtrar_csv_por_dias_uteis_sem_interacao"),
                 patch("app.orchestrator.run.build_attendant_email_queue", return_value=queue),
                 patch("app.orchestrator.run.send_attendant_csv_email") as attendant_send,
                 patch("app.orchestrator.run.send_manager_report_email") as manager_send,
+                patch("app.orchestrator.run.send_requester_report_email") as requester_send,
                 patch("app.orchestrator.run.send_dry_run_success_email") as dry_run_success_send,
                 patch("app.orchestrator.run.mark_queue_item_sent") as mark_sent,
                 patch("app.orchestrator.run.mark_queue_item_failed") as mark_failed,
@@ -84,6 +100,7 @@ class MainRunTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             attendant_send.assert_not_called()
             manager_send.assert_not_called()
+            requester_send.assert_not_called()
             dry_run_success_send.assert_called_once_with(
                 settings=settings.email,
                 recipient="lucas.silva@mainhardt.com.br",
@@ -95,6 +112,7 @@ class MainRunTests(unittest.TestCase):
             mark_failed.assert_not_called()
             logs = "\n".join(captured_logs.output)
             self.assertIn("Dry-run: email individual seria enviado para Ana", logs)
+            self.assertIn("Dry-run: relatorio do solicitante seria enviado para", logs)
             self.assertIn("Dry-run bem-sucedido", logs)
 
     def test_setup_logging_writes_to_rotating_file(self) -> None:

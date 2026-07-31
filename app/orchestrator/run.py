@@ -19,9 +19,10 @@ from app.services import (
     send_attendant_csv_email,
     send_dry_run_success_email,
     send_manager_report_email,
+    send_requester_report_email,
 )
 from app.soft4.browser import Soft4Browser
-from app.soft4.downloader import SessionExpiredError, download_csv
+from app.soft4.downloader import SessionExpiredError, download_csv, download_csv_as
 
 
 LOGGER = logging.getLogger(__name__)
@@ -71,6 +72,27 @@ def run(dry_run: bool = False) -> int:
                 auth_session = browser.ensure_authenticated()
                 csv_path = download_csv(settings.soft4, auth_session, settings.downloads_dir)
 
+            try:
+                requester_csv_path = download_csv_as(
+                    settings.soft4,
+                    auth_session,
+                    settings.requester_downloads_dir,
+                    settings.soft4.requester_listing_type,
+                    settings.soft4.no_interaction_requester_days,
+                    "solicitante",
+                )
+            except SessionExpiredError:
+                LOGGER.info("Sessao expirou durante o download do solicitante; refazendo login")
+                auth_session = browser.ensure_authenticated()
+                requester_csv_path = download_csv_as(
+                    settings.soft4,
+                    auth_session,
+                    settings.requester_downloads_dir,
+                    settings.soft4.requester_listing_type,
+                    settings.soft4.no_interaction_requester_days,
+                    "solicitante",
+                )
+
         data_atual = exported_at.date()
         feriados = montar_feriados(
             data_atual=data_atual,
@@ -84,6 +106,14 @@ def run(dry_run: bool = False) -> int:
             coluna_ultima_interacao=settings.email_queue.last_interaction_column,
         )
 
+        filtrar_csv_por_dias_uteis_sem_interacao(
+            source_csv=requester_csv_path,
+            data_atual=data_atual,
+            feriados=feriados,
+            limite_dias_uteis=settings.soft4.no_interaction_requester_days,
+            coluna_ultima_interacao=settings.requester_report.last_interaction_column,
+        )
+
         email_queue = build_attendant_email_queue(
             source_csv=csv_path,
             settings=settings.email_queue,
@@ -95,8 +125,13 @@ def run(dry_run: bool = False) -> int:
         if dry_run:
             _log_dry_run_plan(email_queue, settings.manager_report.recipient)
             LOGGER.info(
-                "Dry-run bem-sucedido: %s email(s) individual(is) e o relatorio gerencial "
-                "foram simulados, mas nao enviados. Fila mantida como pending em %s",
+                "Dry-run: relatorio do solicitante seria enviado para %s com %s chamado(s)",
+                settings.requester_report.recipient,
+                len(email_queue.items),
+            )
+            LOGGER.info(
+                "Dry-run bem-sucedido: %s email(s) individual(is), o relatorio gerencial "
+                "e o relatorio do solicitante foram simulados, mas nao enviados. Fila mantida como pending em %s",
                 len(email_queue.items),
                 email_queue.queue_dir,
             )
@@ -139,6 +174,18 @@ def run(dry_run: bool = False) -> int:
             )
         except Exception as error:
             failures.append(f"Relatorio gestora: {error}")
+
+        try:
+            send_requester_report_email(
+                settings=settings.email,
+                recipient=settings.requester_report.recipient,
+                requester_name=settings.requester_report.name,
+                source_csv=requester_csv_path,
+                no_interaction_days=settings.soft4.no_interaction_requester_days,
+                exported_at=exported_at,
+            )
+        except Exception as error:
+            failures.append(f"Relatorio solicitante: {error}")
 
         if failures:
             joined = "; ".join(failures)
