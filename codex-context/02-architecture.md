@@ -5,27 +5,32 @@
 ```text
 main.py
   -> app.main.main()
-    -> parse --dry-run
-    -> app.main.run(dry_run)
-    -> setup_logging()
-    -> cleanup_runtime_residue()
-    -> load_settings()
-    -> Soft4Browser.ensure_authenticated()
-    -> download_csv()
-    -> filtrar_csv_por_dias_uteis_sem_interacao()
-    -> build_attendant_email_queue()
-    -> dry-run branch OR real SMTP branch
-    -> cleanup_runtime_residue()
+     -> parse --dry-run
+     -> app.main.run -> app.orchestrator.run.run(dry_run)
+        -> setup_logging()
+        -> cleanup_runtime_residue()
+        -> load_settings()
+        -> Soft4Browser.ensure_authenticated()
+        -> download_csv()
+        -> filtrar_csv_por_dias_uteis_sem_interacao()
+        -> build_attendant_email_queue()
+        -> dry-run branch OR real SMTP branch
+        -> cleanup_runtime_residue()
 ```
 
 ## Modules
 
 - `main.py`: public script entrypoint; disables bytecode writes and returns
   `app.main.main()` as the process exit code.
-- `app/main.py`: CLI parsing, orchestration, cleanup, authentication, CSV
-  download, local filtering, queue creation, dry-run branch, real e-mail
-  branch, and exit-code handling. Logging setup and cleanup are now
-  imported from `app.infra`.
+- `app/main.py`: CLI parsing only (`argparse` + `--dry-run`); reexports
+  `run` from `app.orchestrator.run` for backwards compatibility.
+- `app/orchestrator/__init__.py`: package marker for orchestration.
+- `app/orchestrator/run.py`: full automation flow (`run()`), the dry-run
+  plan logging helper, hardcoded `DRY_RUN_NOTIFICATION_RECIPIENT`, and
+  exit-code handling (0/1/2). Imports its dependencies from the new
+  package layout (`app.config.loader`, `app.csv.filter`, `app.infra.*`,
+  `app.mailer`, `app.queue.repository`, `app.soft4.browser`,
+  `app.soft4.downloader`). Sets `sys.dont_write_bytecode = True`.
 - `app/settings.py`: shim reexporting all settings symbols from
   `app/config/models` (dataclasses), `app/config/loader`
   (`load_settings`, `load_email_settings`, `ConfigError`, `PROJECT_ROOT`)

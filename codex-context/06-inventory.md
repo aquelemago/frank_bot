@@ -47,6 +47,8 @@ Python entrypoints and modules:
 - `app/mailer/reports.py`
 - `app/mailer/smtp.py`
 - `app/mailer/templates.py`
+- `app/orchestrator/__init__.py`
+- `app/orchestrator/run.py`
 - `app/settings.py` (shim reexporting `PROJECT_ROOT`, `ConfigError`, dataclasses,
   `load_settings`, `load_email_settings`, and `setup_logging` from
   `app/config/*` and `app/infra/logging_setup`)

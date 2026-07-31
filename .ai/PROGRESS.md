@@ -19,23 +19,23 @@
 | 4 | `app/queue/` (grouping + attendant_emails + repository) | concluida | `0399d47` | 2026-07-30 |
 | 5 | `app/mailer/` (smtp + templates + reports) | concluida | `62e50c3` | 2026-07-30 |
 | 6 | `app/soft4/` (browser + downloader) | concluida | `a9aaf59` | 2026-07-30 |
-| 7 | `app/orchestrator/` (run isolado) | pendente | — | — |
+| 7 | `app/orchestrator/` (run isolado) | concluida | pendente | 2026-07-30 |
 | 8 | `app/services/` facade + limpeza de shims | pendente | — | — |
 | 9 | Reorganizacao dos testes por tema | pendente | — | — |
 | 10 | Sincronizar documentacao tecnica | pendente | — | — |
 
 ## Pendencias
 
-- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5 e 6 concluidas e validadas.
+- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5, 6 e 7 concluidas e validadas.
 - Apenas operacional: o operador, se desejar, pode rodar `python main.py
   --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
 
 ## Proxima acao
 
-Commit da Tarefa 6 com a mensagem
-`refactor: etapa 6 - app/soft4 (browser + downloader)`.
+Commit da Tarefa 7 com a mensagem
+`refactor: etapa 7 - app/orchestrator (run isolado)`.
 Encerrar a execucao e aguardar confirmacao do operador para iniciar a
-Tarefa 7.
+Tarefa 8.
 
 ## Log de alteracoes da etapa
 
