@@ -19,7 +19,7 @@
 | 4 | `app/queue/` (grouping + attendant_emails + repository) | concluida | `0399d47` | 2026-07-30 |
 | 5 | `app/mailer/` (smtp + templates + reports) | concluida | `62e50c3` | 2026-07-30 |
 | 6 | `app/soft4/` (browser + downloader) | concluida | `a9aaf59` | 2026-07-30 |
-| 7 | `app/orchestrator/` (run isolado) | concluida | pendente | 2026-07-30 |
+| 7 | `app/orchestrator/` (run isolado) | concluida | `5ca027d` | 2026-07-30 |
 | 8 | `app/services/` facade + limpeza de shims | pendente | — | — |
 | 9 | Reorganizacao dos testes por tema | pendente | — | — |
 | 10 | Sincronizar documentacao tecnica | pendente | — | — |
@@ -32,10 +32,8 @@
 
 ## Proxima acao
 
-Commit da Tarefa 7 com a mensagem
-`refactor: etapa 7 - app/orchestrator (run isolado)`.
-Encerrar a execucao e aguardar confirmacao do operador para iniciar a
-Tarefa 8.
+Aguardar confirmacao do operador para iniciar a Tarefa 8
+(`app/services/` facade + limpeza de shims).
 
 ## Log de alteracoes da etapa
 
@@ -194,5 +192,48 @@ Documentacao:
 Validacao:
 - `python -m compileall app tests tools`: OK.
 - `python tests/run_unittest_discovery.py`: **12 OK**.
+
+### Tarefa 7 — `app/orchestrator/`
+
+Criados:
+- `app/orchestrator/__init__.py` (vazio)
+- `app/orchestrator/run.py` — `run()`, `_log_dry_run_plan`,
+  `LOGGER = logging.getLogger(__name__)`,
+  `DRY_RUN_NOTIFICATION_RECIPIENT = "lucas.silva@mainhardt.com.br"`
+  (constante hardcoded preservada, movida de `app/main.py`; decisao ja
+  registrada em DECISIONS.md) e `sys.dont_write_bytecode = True`.
+  Imports diretos dos novos caminhos: `app.config.loader`,
+  `app.csv.filter`, `app.infra.cleanup`, `app.infra.logging_setup`,
+  `app.mailer`, `app.queue.repository`, `app.soft4.browser`,
+  `app.soft4.downloader`.
+
+Alterados:
+- `app/main.py` reduzido a CLI pura (argparse + `--dry-run`); reexporta
+  `run` via `from app.orchestrator.run import run`. Mantem
+  `sys.dont_write_bytecode = True`.
+- `tests/test_main_and_logging.py`: imports atualizados
+  (`from app.main import main`, `from app.orchestrator.run import run`);
+  os 15 patches movidos de `patch("app.main.<simbolo>")` para
+  `patch("app.orchestrator.run.<simbolo>")`; `assertLogs` trocado de
+  `"app.main"` para `"app.orchestrator.run"`. `test_cli_enables_dry_run`
+  mantem `patch("app.main.run", return_value=0)` (continua funcionando
+  pois `app.main` reexporta `run`).
+
+Pontos de atencao (registrados em DECISIONS.md):
+- O nome do logger da orquestracao mudou de `app.main` para
+  `app.orchestrator.run`, mas o formato de log
+  (`%(asctime)s [%(levelname)s] %(message)s`) **nao inclui o nome do
+  logger**, logo a saida de log permanece identica.
+
+Documentacao:
+- `codex-context/02-architecture.md` atualizado (Main Flow + Modules).
+- `codex-context/06-inventory.md` inventario atualizado com os 2 novos
+  arquivos (`app/orchestrator/__init__.py`, `app/orchestrator/run.py`).
+
+Validacao:
+- `python -m compileall app tests tools`: OK.
+- `python tests/run_unittest_discovery.py`: **12 OK**.
+- Dry-run real (`python main.py --dry-run`) permanece a cargo do
+  operador (opcional).
 
 

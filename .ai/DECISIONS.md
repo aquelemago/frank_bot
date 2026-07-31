@@ -193,4 +193,36 @@ Cada entrada contem: data, contexto, decisao, impacto, status.
   patch entre a fase intermediaria e a final.
 - **Status**: aceito. Implementado em `app/mailer/__init__.py`.
 
+### 2026-07-30 — Microdecisao na Tarefa 7: logger name muda para `app.orchestrator.run` sem impacto na saida de log
+
+- **Contexto**: o `run()` e o `_log_dry_run_plan` foram movidos de
+  `app/main.py` para `app/orchestrator/run.py`, trocando o nome do
+  logger de `app.main` para `app.orchestrator.run`.
+- **Decisao**: aceita a mudanca de nome do logger. O formato de log
+  (`%(asctime)s [%(levelname)s] %(message)s`) **nao inclui o nome do
+  logger**, portanto a saida de log permanece identica antes/depois.
+  `tests/test_main_and_logging.py` foi atualizado: `assertLogs` para
+  `"app.orchestrator.run"` e os 15 patches movidos para
+  `patch("app.orchestrator.run.<simbolo>")`.
+- **Impacto**: nenhuma assertiva mudou (apenas alvos de patch); o output
+  de log nao muda. `test_cli_enables_dry_run` mantem
+  `patch("app.main.run", return_value=0)` pois `app/main.py` reexporta
+  `run` de `app.orchestrator.run`.
+- **Status**: aceito. Implementado em `app/orchestrator/run.py`.
+
+### 2026-07-30 — Microdecisao na Tarefa 7: `sys.dont_write_bytecode` presente no entrypoint e na orquestracao
+
+- **Contexto**: o `app/main.py` original definia `sys.dont_write_bytecode
+  = True` no topo para evitar geracao de `__pycache__`. Com o
+  desmembramento, a orquestracao passou a viver em
+  `app/orchestrator/run.py`.
+- **Decisao**: manter `sys.dont_write_bytecode = True` em
+  `app/orchestrator/run.py` (ponto onde a pipeline e importada/executada
+  em contexto de automacao) e tambem em `app/main.py` (entrypoint CLI).
+  Duplicacao intencional e trivial, sem dependencia entre os modulos.
+- **Impacto**: nenhum `__pycache__` e gerado quando o run.py e
+  importado; comportamento identico ao original.
+- **Status**: aceito. Implementado em `app/orchestrator/run.py:30` e
+  `app/main.py:10`.
+
 
