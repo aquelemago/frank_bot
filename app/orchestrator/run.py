@@ -12,6 +12,7 @@ from app.csv.filter import (
 )
 from app.infra.cleanup import cleanup_runtime_residue
 from app.infra.logging_setup import setup_logging
+from app.requester.delivery import build_requester_deliveries
 from app.services import (
     build_attendant_email_queue,
     mark_queue_item_failed,
@@ -46,6 +47,78 @@ def _log_dry_run_plan(email_queue, manager_recipient: str) -> None:
         manager_recipient,
         len(email_queue.items),
     )
+
+
+def _dispatch_requester_reports(
+    settings,
+    requester_csv_path,
+    exported_at,
+    dry_run: bool,
+    failures: list[str],
+) -> None:
+    api_key = getattr(settings.soft4, "api_key", "")
+    if not api_key:
+        if dry_run:
+            LOGGER.info(
+                "Dry-run: relatorio do solicitante seria enviado para %s",
+                settings.requester_report.recipient,
+            )
+            return
+        try:
+            send_requester_report_email(
+                settings=settings.email,
+                recipient=settings.requester_report.recipient,
+                requester_name=settings.requester_report.name,
+                source_csv=requester_csv_path,
+                no_interaction_days=settings.soft4.no_interaction_requester_days,
+                exported_at=exported_at,
+            )
+        except Exception as error:
+            failures.append(f"Relatorio solicitante: {error}")
+        return
+
+    id_column = getattr(settings.requester_report, "id_column", "ID")
+    output_dir = (
+        settings.requester_downloads_dir
+        / f"relatorio_solicitante_{exported_at:%Y%m%d_%H%M%S}"
+    )
+    try:
+        deliveries = build_requester_deliveries(
+            source_csv=requester_csv_path,
+            api_settings=settings.soft4,
+            id_column=id_column,
+            output_dir=output_dir,
+        )
+    except Exception as error:
+        message = f"Relatorio solicitante: {error}"
+        if dry_run:
+            LOGGER.error("Dry-run: %s", message)
+        else:
+            failures.append(message)
+        return
+
+    for delivery in deliveries:
+        if dry_run:
+            LOGGER.info(
+                "Dry-run: relatorio do solicitante seria enviado para %s <%s> "
+                "com %s chamado(s); anexo=%s",
+                delivery.solicitante,
+                delivery.recipient,
+                delivery.row_count,
+                delivery.csv_path,
+            )
+            continue
+        try:
+            send_requester_report_email(
+                settings=settings.email,
+                recipient=delivery.recipient,
+                requester_name=delivery.solicitante,
+                source_csv=delivery.csv_path,
+                no_interaction_days=settings.soft4.no_interaction_requester_days,
+                exported_at=exported_at,
+            )
+        except Exception as error:
+            failures.append(f"Relatorio solicitante {delivery.recipient}: {error}")
 
 
 def run(dry_run: bool = False) -> int:
@@ -124,10 +197,12 @@ def run(dry_run: bool = False) -> int:
 
         if dry_run:
             _log_dry_run_plan(email_queue, settings.manager_report.recipient)
-            LOGGER.info(
-                "Dry-run: relatorio do solicitante seria enviado para %s com %s chamado(s)",
-                settings.requester_report.recipient,
-                len(email_queue.items),
+            _dispatch_requester_reports(
+                settings,
+                requester_csv_path,
+                exported_at,
+                dry_run=True,
+                failures=[],
             )
             LOGGER.info(
                 "Dry-run bem-sucedido: %s email(s) individual(is), o relatorio gerencial "
@@ -175,17 +250,13 @@ def run(dry_run: bool = False) -> int:
         except Exception as error:
             failures.append(f"Relatorio gestora: {error}")
 
-        try:
-            send_requester_report_email(
-                settings=settings.email,
-                recipient=settings.requester_report.recipient,
-                requester_name=settings.requester_report.name,
-                source_csv=requester_csv_path,
-                no_interaction_days=settings.soft4.no_interaction_requester_days,
-                exported_at=exported_at,
-            )
-        except Exception as error:
-            failures.append(f"Relatorio solicitante: {error}")
+        _dispatch_requester_reports(
+            settings,
+            requester_csv_path,
+            exported_at,
+            dry_run=False,
+            failures=failures,
+        )
 
         if failures:
             joined = "; ".join(failures)

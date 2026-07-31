@@ -53,6 +53,7 @@ class MainRunTests(unittest.TestCase):
                     no_interaction_attendant_days=3,
                     no_interaction_requester_days=5,
                     requester_listing_type="SEM_INTERACAO_SOLICITANTE",
+                    api_key="",
                 ),
                 email=SimpleNamespace(),
                 email_queue=SimpleNamespace(
@@ -67,6 +68,7 @@ class MainRunTests(unittest.TestCase):
                     recipient="solicitante@example.com",
                     name="Solicitante",
                     last_interaction_column="ultima interacao",
+                    id_column="ID",
                 ),
                 downloads_dir=root / "downloads",
                 requester_downloads_dir=root / "downloads",

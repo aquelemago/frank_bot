@@ -48,8 +48,10 @@ This is the first file an AI agent should read in this project.
     repository).
   - `app/mailer/`: SMTP transport (`smtp.py`), HTML templates
     (`templates.py`), manager report assembly (`reports.py`).
-  - `app/soft4/`: external integration (Playwright browser session and CSV
-    downloader).
+  - `app/soft4/`: external integration (Playwright browser session, CSV
+    downloader, and Softdesk API client `api.py`).
+  - `app/requester/`: requester report delivery (group chamados by solicitante
+    e-mail fetched from the Softdesk API).
   - `app/infra/`: cross-cutting infrastructure (logging, cleanup, fs).
 - Public command: `python main.py`.
 - Dry-run command: `python main.py --dry-run`.

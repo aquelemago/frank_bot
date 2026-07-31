@@ -14,6 +14,8 @@ class Soft4Settings:
     requester_listing_type: str
     no_interaction_requester_days: int
     additional_holidays: str
+    api_key: str
+    api_path: str
     usuario: str
     senha: str
     user_data_dir: Path
@@ -57,6 +59,7 @@ class RequesterReportSettings:
     recipient: str
     name: str
     last_interaction_column: str
+    id_column: str
 
 
 @dataclass(frozen=True)

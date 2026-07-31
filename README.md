@@ -69,9 +69,19 @@ NOME_GESTORA_RELATORIO=Francieli
 CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE=ultima interacao solicitante
 SOFT4_TP_LISTAGEM_SOLICITANTE=SEM_INTERACAO_SOLICITANTE
 SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE=5
+CSV_COLUNA_ID_CHAMADO=ID
+SOFTDESK_API_KEY=
 EMAIL_SOLICITANTE_RELATORIO=lcabra570@gmail.com
 NOME_SOLICITANTE_RELATORIO=Teste
 ```
+
+Quando `SOFTDESK_API_KEY` estiver preenchida, o relatorio do solicitante e
+enviado individualmente para cada solicitante. A automacao consulta a API do
+Softdesk (`GET /api/api.php/chamado?codigo=<numero do chamado>`, cabecalho
+`hash-api`) para obter o e-mail do solicitante de cada chamado do CSV, agrupa os
+chamados por e-mail e envia um relatorio por destinatario. `CSV_COLUNA_ID_CHAMADO`
+indica a coluna com o numero do chamado. Sem a chave, mantem o comportamento
+legado de enviar um unico relatorio para `EMAIL_SOLICITANTE_RELATORIO`.
 
 Mapeie atendentes em `config/email_atendente.env`:
 
@@ -94,6 +104,7 @@ SOFT4_FILA_PATH=/chamado/fila-de-atendimento
 SOFT4_CSV_PATH=/chamado/fila-de-atendimento/csv
 SOFT4_TIMEOUT_SECONDS=60
 SOFT4_RETRIES=3
+SOFT4_API_PATH=/api/api.php
 ```
 
 Compatibilidade legada:
@@ -215,7 +226,8 @@ python -m unittest discover -s tests -p "test_*.py" -v
 |   |-- csv/                    # leitura de CSV + filtro de dias uteis
 |   |-- queue/                  # dominio da fila de e-mail
 |   |-- mailer/                 # transporte SMTP + templates + relatorio
-|   |-- soft4/                  # integracao externa (Playwright/Soft4)
+|   |-- soft4/                  # integracao externa (Playwright/Soft4) + API Softdesk
+|   |-- requester/              # entregas do relatorio por solicitante via API
 |   `-- infra/                  # logging, cleanup e helpers de filesystem
 |-- tests/
 `-- tools/
