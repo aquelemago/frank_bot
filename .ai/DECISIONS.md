@@ -225,4 +225,24 @@ Cada entrada contem: data, contexto, decisao, impacto, status.
 - **Status**: aceito. Implementado em `app/orchestrator/run.py:30` e
   `app/main.py:10`.
 
+### 2026-07-31 — Microdecisao na Tarefa 8: `app/services` como facade e pontos de patch de teste inalterados
+
+- **Contexto**: a Tarefa 8 criou `app/services/__init__.py` como facade
+  (mailer send functions + dominio de fila) e eliminou os 7 shims
+  (`app/settings.py`, `app/cleanup.py`, `app/csv_utils.py`,
+  `app/business_days.py`, `app/email_queue.py`, `app/auth.py`,
+  `app/downloader.py`).
+- **Decisao**: o orquestrador (`app/orchestrator/run.py`) importa
+  `send_*` e `mark_queue_item_*` de `app.services`; os demais imports
+  permanecem nos caminhos baixos (`app.config.*`, `app.csv.*`,
+  `app.infra.*`, `app.soft4.*`). A facade e o unico ponto de entrada de
+  servicos para o orquestrador e para `tools/send_test_email.py`.
+- **Impacto**: os pontos de patch dos testes NAO mudaram:
+  `patch("app.orchestrator.run.<simbolo>")` (namespace do run) e
+  `patch("app.mailer._send_message", ...)` (alias no `__init__.py` do
+  mailer) continuam validos. Grep confirmou zero imports legados dos 7
+  shims em `app`, `tests` e `tools`.
+- **Status**: aceito. Refletido em `app/services/__init__.py` e nas
+  docs (`02-architecture.md`, `06-inventory.md`, `README.md`).
+
 

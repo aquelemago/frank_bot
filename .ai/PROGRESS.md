@@ -20,7 +20,7 @@
 | 5 | `app/mailer/` (smtp + templates + reports) | concluida | `62e50c3` | 2026-07-30 |
 | 6 | `app/soft4/` (browser + downloader) | concluida | `a9aaf59` | 2026-07-30 |
 | 7 | `app/orchestrator/` (run isolado) | concluida | `5ca027d` | 2026-07-30 |
-| 8 | `app/services/` facade + limpeza de shims | concluida | pendente | 2026-07-31 |
+| 8 | `app/services/` facade + limpeza de shims | concluida | `6b40fba` | 2026-07-31 |
 | 9 | Reorganizacao dos testes por tema | pendente | — | — |
 | 10 | Sincronizar documentacao tecnica | pendente | — | — |
 
