@@ -3,8 +3,8 @@
 ## Audit Snapshot
 
 - Date: 2026-07-28 (original audit); re-verified 2026-07-31 after the 10-step
-  architecture refactor (file list below matches the final tree on branch
-  `feature/refatora-arquitetura`).
+  architecture refactor and again after the requester-report feature (etapas
+  1-13) on branch `feature/envia-email-para-solicitante`.
 - Source of truth: current Python code, tests, `requirements.txt`, and Git
   metadata.
 - Repository state: this folder is a Git repository. During this audit,
@@ -29,6 +29,9 @@ Python entrypoints and modules:
 - `app/soft4/__init__.py`
 - `app/soft4/browser.py`
 - `app/soft4/downloader.py`
+- `app/soft4/api.py`
+- `app/requester/__init__.py`
+- `app/requester/delivery.py`
 - `app/queue/__init__.py`
 - `app/queue/grouping.py`
 - `app/queue/attendant_emails.py`
@@ -56,6 +59,9 @@ Tests:
 - `tests/test_email_queue.py`
 - `tests/test_mailer.py`
 - `tests/test_main_run.py`
+- `tests/test_soft4_api.py`
+- `tests/test_requester_report.py`
+- `tests/test_requester_delivery.py`
 
 Documentation:
 
@@ -77,8 +83,9 @@ Declared in `requirements.txt`:
 - `python-dotenv>=1.0.1`
 - `requests>=2.31.0`
 
-Observation: no direct `requests` import was found in the current Python project
-files during documentation review. Keep it until operational impact is checked.
+Observation: `requests` is imported directly by `app/soft4/api.py` (Softdesk
+API client) and mocked in `tests/test_soft4_api.py`. It is required and must
+stay in `requirements.txt`.
 
 ## Tests
 
@@ -92,6 +99,13 @@ Covered by current tests:
 - Missing attendant recipient handling.
 - Attendant e-mail HTML template.
 - Manager report e-mail generation.
+- Requester report e-mail generation (`render_requester_report_email`).
+- Requester delivery grouping via the Softdesk API
+  (`tests/test_requester_delivery.py`).
+- Softdesk API fetch with 404/429/retry and missing-key handling
+  (`tests/test_soft4_api.py`).
+- CLI `--solicitante` flag and requester-only dry-run
+  (`tests/test_main_run.py`).
 - SMTP test e-mail generation.
 - Dry-run confirmation e-mail generation.
 - CSV key normalization.

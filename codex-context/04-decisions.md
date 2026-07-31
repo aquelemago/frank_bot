@@ -65,12 +65,14 @@ Scope and outcome:
   `app/downloader.py`) were removed after imports were migrated.
 - Tests were reorganized by theme into `tests/test_csv_filter.py`,
   `tests/test_email_queue.py`, `tests/test_mailer.py`, and
-  `tests/test_main_run.py` (same 12 tests, all green).
-- Divergences preserved (see `codex-context/02-architecture.md` and
-  `codex-context/05-backlog.md`): `requests` still declared without direct
-  import; `SOFT4_CSV_PATH` loaded but not used by the fetch; the two
-  attendant-grouping rules (queue discards empty; manager report uses
-  `"Sem atendente"`) intentionally not unified.
+  `tests/test_main_run.py` (12 tests green at the time; the suite later grew
+  to 27 tests with the requester feature in etapas 1-12).
+- Divergences preserved at the time (see `codex-context/02-architecture.md`
+  and `codex-context/05-backlog.md`): `SOFT4_CSV_PATH` loaded but not used by
+  the fetch; the two attendant-grouping rules (queue discards empty; manager
+  report uses `"Sem atendente"`) intentionally not unified. The `requests`
+  divergence was resolved in etapa 10 when `app/soft4/api.py` started using
+  `requests` for the Softdesk API.
 
 Reason: the original flat modules mixed concerns (config + logging, CSV filter +
 file writes, SMTP + templates + report) and duplicated helpers (e.g.
@@ -79,5 +81,35 @@ without altering its observable behavior.
 
 Status: accepted. Completed 2026-07-31. Validated at each step with
 `python -m compileall app tests tools` and `python tests/run_unittest_discovery.py`
-(12/12 OK).
+(12/12 OK at the time; 27/27 OK after the requester feature).
+
+## 2026-07-31 - Requester Report Feature (Etapas 1-12)
+
+Decision: add a requester report (chamados without requester interaction) as an
+independent service, following the plan tracked in
+`.ai/relatorio-solicitante/` (etapas 1-13 on branch
+`feature/envia-email-para-solicitante`).
+
+Scope and outcome:
+
+- `SOFT4_TP_LISTAGEM_SOLICITANTE` (default `SEM_INTERACAO_SOLICITANTE`) and
+  `SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` (default 5) drive the requester CSV
+  download and local filter.
+- `app/soft4/api.py` uses `requests` to fetch each chamado's requester e-mail
+  from the Softdesk API (`GET /api/api.php/chamado`, `hash-api` header, HTTP
+  429 retry); `app/requester/delivery.py` groups chamados by requester e-mail.
+- Per-requester reports plus a full report to `EMAIL_SOLICITANTE_TODOS_CHAMADOS`
+  are sent in a real run; without `SOFTDESK_API_KEY`, a single legacy report
+  goes to `EMAIL_SOLICITANTE_RELATORIO`.
+- The CLI gained `--solicitante`; `app.orchestrator.run.run(dry_run,
+  solicitante)` dispatches to `_run_attendant_report` or `_run_requester_report`.
+- Requester dry-run downloads and filters but sends no e-mails.
+
+Reason: delivery per requester reduces message blast radius and keeps each
+solicitante informed about their own chamados; the full-report copy preserves
+the consolidated view.
+
+Status: accepted. Completed 2026-07-31. Validated with `compileall` and 27/27
+unit tests; real API validation of chamados 77934 and 78969 succeeded without
+sending e-mails.
 

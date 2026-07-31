@@ -6,6 +6,14 @@ relatório completo, separação dos serviços).
 
 Convenções: evidência = `documento:linha` → `código real`.
 
+## Status
+
+- Revisão de 2026-07-31: todos os itens de A a K foram **resolvidos** nesta
+  sessão de documentação, exceto o **item 31** (default com typo no
+  `loader.py`), que exige decisão do operador por ser configuração funcional.
+- Os itens fixados estão listados em "Resolvidas" ao final; os arquivos foram
+  corrigidos e validados (`compileall` + 27 testes OK), commit pendente.
+
 ## A. Requests agora é usado diretamente
 
 1. `codex-context/05-backlog.md:7-8` — "Confirm whether `requests` is still
@@ -161,3 +169,45 @@ Convenções: evidência = `documento:linha` → `código real`.
   vars do solicitante/API.
 - `app/main.py:23-28` flag `--solicitante` → `run(dry_run, solicitante)`.
 - Testes: **27 OK**; `python -m compileall app tests tools` OK.
+
+## Resolvidas (2026-07-31)
+
+Correções aplicadas nesta sessão de documentação (commit pendente):
+
+- **1, 2, 3** — `codex-context/05-backlog.md`, `06-inventory.md`,
+  `04-decisions.md`: item/observação de `requests` removidos ou atualizados.
+- **4, 5** — `.ai/DECISIONS.md` (Divergencia 2 anotada como resolvida) e
+  `.ai/CONTEXT.md` (nota de atualização no cabeçalho do snapshot).
+- **6** — `README.md`: observação sobre `requests` sem import substituída
+  pela referência ao `app/soft4/api.py`.
+- **7, 8, 9** — `.ai/VALIDATION.md`, `.ai/RULES.md`,
+  `.ai/relatorio-solicitante/AGENT.md`: baseline de testes 12 → 27.
+- **10** — `.ai/PROGRESS.md`: seções do feature do solicitante (etapas 1-13)
+  e validação real da API Softdesk adicionadas.
+- **11** — `.ai/CONTEXT.md` anotado (nota do snapshot).
+- **12, 13, 14, 15** — `.ai/VALIDATION.md`, `.ai/RULES.md`,
+  `codex-context/02-architecture.md`: templates/funções de envio 4 → 5.
+- **16, 17, 18, 19** — `codex-context/02-architecture.md` e
+  `01-overview.md`: dispatcher `run(dry_run, solicitante)`, fluxos do
+  atendente e do solicitante, entrypoints `--solicitante` e dry-run.
+- **20, 21, 22, 23** — `codex-context/06-inventory.md` e
+  `02-architecture.md`: módulos `app/soft4/api.py`, `app/requester/*` e os
+  novos testes; snapshot re-verificado na branch atual;
+  `RequesterReportSettings`.
+- **24, 25, 26** — `codex-context/02-architecture.md`: Configuration Surface
+  e Side Effects do solicitante/API adicionados.
+- **27, 28** — `codex-context/03-operations.md` e `01-overview.md`: comandos
+  do solicitante, falhas comuns da API e saídas adicionados.
+- **29** — `.ai/VALIDATION.md`: `from app\.mailer import` removido da
+  checagem de imports legados.
+- **30** — `.ai/RULES.md`: formato de commit `refactor:`/`feat:` alinhado.
+- **32, 33, 34** — `.ai/ARCHITECTURE.md` anotado como histórico e atualizado
+  com `api.py`/`requester/`; `docs/refactoring-plan.md` mantido como plano
+  histórico; `.ai/relatorio-solicitante/TODO.md` preservado como plano.
+
+## Em aberto (requer operador)
+
+- **31** — `app/config/loader.py:121`: default `lcabra570@gmail.com` (typo)
+  vs `README.md:74` `lcabral570@gmail.com`. `.env` define o valor correto,
+  então o runtime não é afetado. Corrigir o default é mudança de
+  configuração funcional → validar com o operador.

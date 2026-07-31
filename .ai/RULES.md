@@ -16,7 +16,7 @@ em `DECISIONS.md` antes de prosseguir**. Nao tomar decisoes automaticas.
 - Nunca alterar integracoes externas (Soft4, SMTP).
 - Nunca alterar formato de entrada (env, CSV, endpoints).
 - Nunca alterar formato de saida (logs, CSVs por atendente, queue.json,
-  metadados JSON, HTML dos 4 e-mails, codigos de saida 0/1/2).
+  metadados JSON, HTML dos 5 e-mails, codigos de saida 0/1/2).
 - Nunca adicionar funcionalidades.
 - Nunca remover funcionalidades.
 - Nunca alterar configuracao funcional (variaveis, defaults, lista de
@@ -45,7 +45,8 @@ em `DECISIONS.md` antes de prosseguir**. Nao tomar decisoes automaticas.
 - Sempre atualizar `DECISIONS.md` quando houver decisao tomada ou divergencia
   registrada.
 - Sempre commitar UMA tarefa por commit
-  ( mensagem: `refactor: etapa N - <resumo>` ).
+  ( mensagem: `refactor: etapa N - <resumo>` para refatoracao ou
+  `feat: etapa N - <resumo>` para funcionalidade ).
 
 ## Tratamento de problemas
 
@@ -80,7 +81,7 @@ Evitar:
 Uma tarefa so e considerada concluida quando:
 
 - `python -m compileall app tests tools` sem erros.
-- `python tests/run_unittest_discovery.py` 100% verde (12 testes).
+- `python tests/run_unittest_discovery.py` 100% verde (27 testes).
 - Documentacao impactada foi atualizada.
 - `PROGRESS.md` foi atualizado.
 - Nenhum shim novo ficou pendente de uso (nao usar shims como desculpa para

@@ -3,6 +3,11 @@
 > Snapshot capturado em 2026-07-30, no inicio da refatoracao. O codigo e a
 > fonte de verdade; este documento apenas congela o estado inicial para
 > referencia.
+>
+> Atualizacoes posteriores ao snapshot (2026-07-31): o feature do
+> solicitante adicionou `app/soft4/api.py` (que usa `requests` — divergencia
+> 2 resolvida) e `app/requester/delivery.py`; a suite de testes cresceu de
+> 12 para 27. Ver `codex-context/` e `.ai/documentacao/INCONSISTENCIAS.md`.
 
 ## Identificacao do projeto
 

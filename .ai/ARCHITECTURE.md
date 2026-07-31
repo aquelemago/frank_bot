@@ -1,5 +1,12 @@
 # ARCHITECTURE.md — Arquitetura Atual e Arquitetura Alvo
 
+> Nota: documento historico do plano de refatoracao de 10 etapas
+> (concluida 2026-07-31). A arquitetura ALVO (secao 2) ja foi implementada
+> e evoluiu: o feature do solicitante (etapas 1-12) adicionou
+> `app/soft4/api.py` (cliente da API Softdesk) e `app/requester/delivery.py`,
+> e o mailer passou a ter 5 funcoes de envio e 5 templates. Ver
+> `codex-context/02-architecture.md` para o estado atual.
+
 ## 1. Arquitetura ATUAL (snapshot inicial)
 
 ### Fluxo principal
@@ -121,7 +128,12 @@ frank_bot/
 │   ├── soft4/
 │   │   ├── __init__.py
 │   │   ├── browser.py           # Soft4Browser, login, CSRF, cookies
-│   │   └── downloader.py        # download_csv + payload + retry + validacao
+│   │   ├── downloader.py        # download_csv + payload + retry + validacao
+│   │   └── api.py               # cliente da API Softdesk (etapa 10 do feature)
+│   │
+│   ├── requester/
+│   │   ├── __init__.py
+│   │   └── delivery.py          # build_requester_deliveries (etapas do feature)
 │   │
 │   ├── csv/
 │   │   ├── __init__.py

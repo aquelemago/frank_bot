@@ -57,6 +57,10 @@ Cada entrada contem: data, contexto, decisao, impacto, status.
 - **Impacto**: `requirements.txt` permanece inalterado ao final da
   refatoracao.
 - **Status**: aceito como pre-existente. Fora do escopo.
+- **Resolvida em 2026-07-31**: `app/soft4/api.py` passou a importar
+  `requests` (cliente da API Softdesk, etapa 10 do feature do solicitante).
+  A divergencia nao existe mais; `requests` tem uso direto e continua
+  declarado.
 
 ---
 
@@ -260,5 +264,45 @@ Cada entrada contem: data, contexto, decisao, impacto, status.
 - **Impacto**: nenhuma assertiva mudou na reorganizacao; apenas o
   agrupamento dos testes em arquivos tematicos.
 - **Status**: aceito. Implementado em `tests/test_mailer.py`.
+
+---
+
+## 2026-07-31 — Feature do solicitante: decisoes das etapas 10-12
+
+### Etapa 10 — Coleta de e-mail do solicitante via API Softdesk
+
+- **Decisao**: criar `app/soft4/api.py` usando `requests` para consultar
+  `GET /api/api.php/chamado?codigo=<numero>` (cabecalho `hash-api`) e obter
+  o e-mail do solicitante de cada chamado. Retry em HTTP 429 usando
+  `Retry-After`. Chamados sem registro ou sem e-mail sao ignorados com
+  `LOGGER.warning`.
+- **Status**: aceito. Implementado em `app/soft4/api.py`; coberto por
+  `tests/test_soft4_api.py`.
+
+### Etapa 11 — Relatorio completo para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`
+
+- **Decisao**: alem dos envios individuais por solicitante, enviar o
+  relatorio com todos os chamados para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`
+  (quando preenchida). Novo campo `full_report_recipient` em
+  `RequesterReportSettings`.
+- **Status**: aceito. Valor em `.env` definido como `lcabral570@gmail.com`.
+
+### Etapa 12 — Separacao dos servicos (atendente vs solicitante)
+
+- **Decisao**: dois servicos independentes. `run(dry_run, solicitante)`
+  despacha para `_run_attendant_report` ou `_run_requester_report`. CLI
+  ganhou a flag `--solicitante`. O fluxo do atendente permanece o original
+  (`python main.py`); o do solicitante e separado
+  (`python main.py --solicitante`).
+- **Status**: aceito. Implementado em `app/orchestrator/run.py` e
+  `app/main.py`; coberto por `tests/test_main_run.py`.
+
+### Etapa 13 — Agente de documentacao
+
+- **Decisao**: criar `.ai/documentacao/` (AGENT.md, TODO.md,
+  INCONSISTENCIAS.md) e instalar skills de documentacao
+  (`.agents/skills/`, `.claude/skills/`, `.continue/skills/`, `.pi/skills/`,
+  registradas em `skills-lock.json`).
+- **Status**: aceito. Commit `e4a46de`.
 
 

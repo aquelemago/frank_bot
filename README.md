@@ -40,8 +40,8 @@ Dependencias declaradas:
 - `python-dotenv>=1.0.1`
 - `requests>=2.31.0`
 
-Observacao: `requests` esta declarado, mas o codigo atual nao possui import
-direto dele. Confirme impacto operacional antes de remover.
+Observacao: `requests` e usado pelo cliente da API Softdesk
+(`app/soft4/api.py`) para o relatorio do solicitante.
 
 ## Configuracao
 

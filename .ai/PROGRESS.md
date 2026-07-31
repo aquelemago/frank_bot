@@ -8,7 +8,7 @@
 - Testes baseline: **12 OK** (`python tests/run_unittest_discovery.py`).
 - `compileall`: OK.
 
-## Status por tarefa
+## Status por tarefa (refatoracao)
 
 | Tarefa | Titulo | Status | Commit | Validado em |
 |---|---|---|---|---|
@@ -23,6 +23,34 @@
 | 8 | `app/services/` facade + limpeza de shims | concluida | `6b40fba` | 2026-07-31 |
 | 9 | Reorganizacao dos testes por tema | concluida | `2772591` | 2026-07-31 |
 | 10 | Sincronizar documentacao tecnica | concluida | `f068d4a` | 2026-07-31 |
+
+## Status por tarefa (feature do solicitante)
+
+Branch `feature/envia-email-para-solicitante`. Plano em
+`.ai/relatorio-solicitante/TODO.md`; testes: 12 -> 27 OK.
+
+| Tarefa | Titulo | Status | Commit |
+|---|---|---|---|
+| 1 | Config models para relatorio de solicitante | concluida | `383b831` |
+| 2 | Loader para relatorio de solicitante | concluida | `1c06f89` |
+| 3 | `download_csv_as` parametrizado para solicitante | concluida | `7f37e81` |
+| 4-5 | `render_requester_report_email` + `send_requester_report_email` | concluida | `969cf7d` |
+| 6 | `send_requester_report_email` no facade services | concluida | `dd6ce2a` |
+| 7 | Orquestracao do relatorio do solicitante no run | concluida | `d585d6c` |
+| 8 | Testes do relatorio do solicitante | concluida | `ef97b6e` |
+| 9 | Documenta env vars e saidas do relatorio do solicitante | concluida | `a70360b` |
+| 10 | Coleta email do solicitante via API Softdesk | concluida | `46b809c` |
+| 11 | Relatorio do solicitante completo para `lcabral570@gmail.com` | concluida | `c5a1abe` |
+| 12 | Separa servicos do relatorio do atendente e do solicitante | concluida | `6dc9cce` |
+| 13 | Agente de documentacao com skills e revisao de inconsistencias | concluida | `e4a46de` |
+
+## Validacao operacional (API Softdesk real — 2026-07-31)
+
+- Chamado 77934 -> `bruna.martins@hard.com.br` (Bruna Martins).
+- Chamado 78969 -> `talita.gois@axa.com` (Talita Gois).
+- Entregas por destinatario geradas corretamente em
+  `downloads/teste_api_20260731_152726/` (artefatos removidos).
+- Nenhum e-mail enviado (operador optou por parar a validacao aqui).
 
 ## Pendencias
 

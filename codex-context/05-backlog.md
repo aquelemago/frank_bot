@@ -4,8 +4,6 @@
 
 - Confirm the exact attendant column name in the production Soft4 CSV.
 - Confirm the exact last-interaction column name in the production Soft4 CSV.
-- Confirm whether `requests` is still needed; the current project files do not
-  import it directly.
 - Confirm whether `SOFT4_CSV_PATH` should be used by `app/soft4/downloader.py`;
   the current browser-side fetch uses the literal
   `/chamado/fila-de-atendimento/csv` path.
