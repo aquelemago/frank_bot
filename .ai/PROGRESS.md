@@ -20,20 +20,21 @@
 | 5 | `app/mailer/` (smtp + templates + reports) | concluida | `62e50c3` | 2026-07-30 |
 | 6 | `app/soft4/` (browser + downloader) | concluida | `a9aaf59` | 2026-07-30 |
 | 7 | `app/orchestrator/` (run isolado) | concluida | `5ca027d` | 2026-07-30 |
-| 8 | `app/services/` facade + limpeza de shims | pendente | — | — |
+| 8 | `app/services/` facade + limpeza de shims | concluida | pendente | 2026-07-31 |
 | 9 | Reorganizacao dos testes por tema | pendente | — | — |
 | 10 | Sincronizar documentacao tecnica | pendente | — | — |
 
 ## Pendencias
 
-- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5, 6 e 7 concluidas e validadas.
+- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5, 6, 7 e 8 concluidas e
+  validadas.
 - Apenas operacional: o operador, se desejar, pode rodar `python main.py
   --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
 
 ## Proxima acao
 
-Aguardar confirmacao do operador para iniciar a Tarefa 8
-(`app/services/` facade + limpeza de shims).
+Aguardar confirmacao do operador para iniciar a Tarefa 9 (reorganizacao
+dos testes por tema, opcional).
 
 ## Log de alteracoes da etapa
 
@@ -235,5 +236,53 @@ Validacao:
 - `python tests/run_unittest_discovery.py`: **12 OK**.
 - Dry-run real (`python main.py --dry-run`) permanece a cargo do
   operador (opcional).
+
+### Tarefa 8 — `app/services/` facade + limpeza de shims
+
+Criados:
+- `app/services/__init__.py` — facade com reexportacao explicita
+  (`__all__`): as 4 funcoes publicas do mailer (`send_attendant_csv_email`,
+  `send_test_email`, `send_dry_run_success_email`,
+  `send_manager_report_email`), `EmailSendError`, e os simbolos do dominio
+  de fila (`EmailQueue`, `EmailQueueItem`, `EmailQueueError`,
+  `build_attendant_email_queue`, `mark_queue_item_sent`,
+  `mark_queue_item_failed`).
+
+Alterados:
+- `app/orchestrator/run.py`: `send_*` e `mark_queue_item_*` passam a ser
+  importados de `app.services` (mantidos os demais imports dos caminhos
+  baixos: `app.config.loader`, `app.csv.filter`, `app.infra.*`,
+  `app.soft4.*`).
+- `tools/send_test_email.py`: importa de `app.services` e
+  `app.config.loader` (nao mais de `app.settings`/`app.mailer` direto).
+- `tests/test_email_queue_and_mailer.py`: imports de shims trocados por
+  caminhos finais (`app.csv.filter`, `app.csv.io`, `app.config.models`,
+  `app.queue.repository`).
+- `tests/test_main_and_logging.py`: `EmailQueue`/`EmailQueueItem` de
+  `app.queue.repository`; `setup_logging` de `app.infra.logging_setup`.
+
+Deletados (shims, 7 arquivos):
+- `app/settings.py`, `app/cleanup.py`, `app/csv_utils.py`,
+  `app/business_days.py`, `app/email_queue.py`, `app/auth.py`,
+  `app/downloader.py`.
+
+Verificacao de compatibilidade:
+- Grep de `from/import app.(settings|cleanup|csv_utils|business_days|
+  email_queue|auth|downloader)` em `app tests tools` (py): **vazio**.
+- Patches de teste inalterados: `patch("app.orchestrator.run.<X>")` e
+  `patch("app.mailer._send_message", ...)` continuam funcionando.
+
+Documentacao:
+- `codex-context/02-architecture.md`: entradas de shims removidas;
+  adicionado `app/services/__init__.py`; `app/orchestrator/run.py`
+  atualizado (importa de `app.services`); `app/infra/fs.py` referenciando
+  `app/queue/repository`.
+- `codex-context/06-inventory.md`: inventario sem os 7 shims; adicionado
+  `app/services/__init__.py`.
+- `README.md`: bloco "Estrutura" com a arvore de `app/` por pacote.
+
+Validacao:
+- `python -m compileall app tests tools`: OK.
+- `python tests/run_unittest_discovery.py`: **12 OK**.
 
 

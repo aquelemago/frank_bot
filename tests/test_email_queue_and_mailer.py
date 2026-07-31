@@ -6,19 +6,20 @@ from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from app.business_days import (
+from app.config.models import EmailQueueSettings, EmailSettings
+from app.csv.filter import (
     chamado_deve_ser_processado,
     contar_dias_uteis_sem_interacao,
     filtrar_csv_por_dias_uteis_sem_interacao,
 )
-from app.email_queue import build_attendant_email_queue, normalize_key
+from app.csv.io import normalize_key
 from app.mailer import (
     send_attendant_csv_email,
     send_dry_run_success_email,
     send_manager_report_email,
     send_test_email,
 )
-from app.settings import EmailQueueSettings, EmailSettings
+from app.queue.repository import build_attendant_email_queue
 
 
 class EmailQueueAndMailerTests(unittest.TestCase):

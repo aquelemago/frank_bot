@@ -12,15 +12,13 @@ from app.csv.filter import (
 )
 from app.infra.cleanup import cleanup_runtime_residue
 from app.infra.logging_setup import setup_logging
-from app.mailer import (
-    send_attendant_csv_email,
-    send_dry_run_success_email,
-    send_manager_report_email,
-)
-from app.queue.repository import (
+from app.services import (
     build_attendant_email_queue,
     mark_queue_item_failed,
     mark_queue_item_sent,
+    send_attendant_csv_email,
+    send_dry_run_success_email,
+    send_manager_report_email,
 )
 from app.soft4.browser import Soft4Browser
 from app.soft4.downloader import SessionExpiredError, download_csv

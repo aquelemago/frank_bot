@@ -10,9 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from app.config.loader import ConfigError, load_email_settings
 from app.infra.logging_setup import setup_logging
-from app.mailer import EmailSendError, send_test_email
-from app.settings import ConfigError, load_email_settings
+from app.services import EmailSendError, send_test_email
 
 
 DEFAULT_RECIPIENT = "lucas.silva@mainhardt.com.br"

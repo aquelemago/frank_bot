@@ -8,10 +8,10 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from app.email_queue import EmailQueue, EmailQueueItem
+from app.infra.logging_setup import setup_logging
 from app.main import main
 from app.orchestrator.run import run
-from app.settings import setup_logging
+from app.queue.repository import EmailQueue, EmailQueueItem
 
 
 class MainAndLoggingTests(unittest.TestCase):
