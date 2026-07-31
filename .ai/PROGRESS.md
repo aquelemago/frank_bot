@@ -21,7 +21,7 @@
 | 6 | `app/soft4/` (browser + downloader) | concluida | `a9aaf59` | 2026-07-30 |
 | 7 | `app/orchestrator/` (run isolado) | concluida | `5ca027d` | 2026-07-30 |
 | 8 | `app/services/` facade + limpeza de shims | concluida | `6b40fba` | 2026-07-31 |
-| 9 | Reorganizacao dos testes por tema | concluida | pendente | 2026-07-31 |
+| 9 | Reorganizacao dos testes por tema | concluida | `2772591` | 2026-07-31 |
 | 10 | Sincronizar documentacao tecnica | pendente | — | — |
 
 ## Pendencias
