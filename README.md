@@ -162,7 +162,7 @@ Codigos de saida:
 Validacao rapida de sintaxe:
 
 ```powershell
-python -m compileall app tests
+python -m compileall app tests tools
 ```
 
 Testes unitarios:

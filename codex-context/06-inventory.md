@@ -2,7 +2,9 @@
 
 ## Audit Snapshot
 
-- Date: 2026-07-28.
+- Date: 2026-07-28 (original audit); re-verified 2026-07-31 after the 10-step
+  architecture refactor (file list below matches the final tree on branch
+  `feature/refatora-arquitetura`).
 - Source of truth: current Python code, tests, `requirements.txt`, and Git
   metadata.
 - Repository state: this folder is a Git repository. During this audit,

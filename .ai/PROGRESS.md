@@ -22,19 +22,18 @@
 | 7 | `app/orchestrator/` (run isolado) | concluida | `5ca027d` | 2026-07-30 |
 | 8 | `app/services/` facade + limpeza de shims | concluida | `6b40fba` | 2026-07-31 |
 | 9 | Reorganizacao dos testes por tema | concluida | `2772591` | 2026-07-31 |
-| 10 | Sincronizar documentacao tecnica | pendente | — | — |
+| 10 | Sincronizar documentacao tecnica | concluida | pendente | 2026-07-31 |
 
 ## Pendencias
 
-- Nenhuma tecnica. Tarefas 0, 1, 2, 3, 4, 5, 6, 7, 8 e 9 concluidas e
-  validadas.
+- Nenhuma tecnica. **Refatoracao de 10 etapas concluida** (tarefas 0 a 10).
 - Apenas operacional: o operador, se desejar, pode rodar `python main.py
   --dry-run` contra Soft4/SMTP para validacao adicional (opcional).
 
 ## Proxima acao
 
-Aguardar confirmacao do operador para iniciar a Tarefa 10 (sincronizar
-documentacao tecnica: README, CODEX_START_HERE, codex-context).
+Refatoracao concluida. Nenhuma tarefa pendente no backlog de refatoracao.
+Validacao final opcional a cargo do operador: `python main.py --dry-run`.
 
 ## Log de alteracoes da etapa
 
@@ -315,5 +314,42 @@ Validacao:
 - `python -m compileall app tests tools`: OK.
 - `python tests/run_unittest_discovery.py`: **12 OK** (discovery por
   padrao `test*.py` encontra os 4 novos arquivos).
+
+### Tarefa 10 — Sincronizar documentacao tecnica
+
+Alterados (apenas documentacao; nenhum codigo):
+
+- `README.md`: comando de validacao alinhado
+  (`python -m compileall app tests tools`). Bloco "Estrutura" ja havia
+  sido atualizado na Tarefa 8.
+- `CODEX_START_HERE.md`: "Current State" com a arvore de pacotes de
+  `app/` (orchestrator, services, config, csv, queue, mailer, soft4,
+  infra) e referencia a `app.orchestrator.run.run()`; comando de
+  validacao alinhado com `tools`.
+- `codex-context/01-overview.md`: entrypoint programatico documentado
+  como reexport de `app.orchestrator.run.run()`.
+- `codex-context/03-operations.md`: comando `compileall` alinhado com
+  `app tests tools`.
+- `codex-context/04-decisions.md`: nova entrada
+  "10-Step Architectural Refactor (Structure Only)" com data (2026-07-30),
+  motivo, escopo e resultado; itens anteriores preservados.
+- `codex-context/05-backlog.md`: caminhos atualizados
+  (`app/soft4/downloader.py`, `app/soft4/browser.py`); novo item de
+  backlog para unificar as duas regras de agrupamento por atendente
+  (fora do escopo da refatoracao, intencional).
+- `codex-context/06-inventory.md`: snapshot re-verificado em 2026-07-31
+  contra a arvore final (lista de arquivos ja estava sincronizada nas
+  tarefas 7-9).
+
+Consistencia:
+- `codex-context/02-architecture.md` ja estava sincronizado (Main Flow,
+  Modules e Side Effects atualizados nas tarefas 7-8); revisado nesta
+  tarefa — sem referencias remanescentes a shims (apenas notas
+  "(Formerly ...)" historicas).
+
+Validacao:
+- `python -m compileall app tests tools`: OK.
+- `python tests/run_unittest_discovery.py`: **12 OK** (docs nao afetam
+  codigo; mantido para registro).
 
 

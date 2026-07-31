@@ -20,7 +20,7 @@ the current codebase.
 - `python tools/send_test_email.py`: sends a SMTP test e-mail without accessing
   Soft4 or downloading CSV.
 - `app.main.run()`: programmatic orchestration entrypoint used by tests and the
-  CLI.
+  CLI (reexported from `app.orchestrator.run.run()`).
 - `python tests/run_unittest_discovery.py`: unit-test discovery wrapper.
 
 ## In Scope
