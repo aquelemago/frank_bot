@@ -30,7 +30,14 @@ class MainRunTests(unittest.TestCase):
             exit_code = main(["--dry-run"])
 
         self.assertEqual(exit_code, 0)
-        run_mock.assert_called_once_with(dry_run=True)
+        run_mock.assert_called_once_with(dry_run=True, solicitante=False)
+
+    def test_cli_enables_solicitante(self) -> None:
+        with patch("app.main.run", return_value=0) as run_mock:
+            exit_code = main(["--solicitante"])
+
+        self.assertEqual(exit_code, 0)
+        run_mock.assert_called_once_with(dry_run=False, solicitante=True)
 
     def test_dry_run_builds_queue_without_sending_email(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -115,7 +122,6 @@ class MainRunTests(unittest.TestCase):
             mark_failed.assert_not_called()
             logs = "\n".join(captured_logs.output)
             self.assertIn("Dry-run: email individual seria enviado para Ana", logs)
-            self.assertIn("Dry-run: relatorio do solicitante seria enviado para", logs)
             self.assertIn("Dry-run bem-sucedido", logs)
 
     def test_dispatch_requester_reports_sends_full_report_to_copy_recipient(self) -> None:
@@ -175,6 +181,54 @@ class MainRunTests(unittest.TestCase):
             self.assertEqual(full_report_call.kwargs["source_csv"], source_csv)
             self.assertEqual(full_report_call.kwargs["requester_name"], "Solicitante")
             build_mock.assert_called_once()
+
+    def test_requester_only_flow_does_not_touch_attendant_emails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            csv_path = root / "solicitante.csv"
+            csv_path.write_text("ID\n1\n", encoding="utf-8")
+            settings = SimpleNamespace(
+                soft4=SimpleNamespace(
+                    requester_listing_type="SEM_INTERACAO_SOLICITANTE",
+                    no_interaction_requester_days=5,
+                    additional_holidays="",
+                ),
+                email=SimpleNamespace(),
+                requester_report=SimpleNamespace(
+                    recipient="solicitante@example.com",
+                    name="Solicitante",
+                    last_interaction_column="ultima interacao",
+                    id_column="ID",
+                    full_report_recipient="",
+                ),
+                requester_downloads_dir=root / "downloads",
+            )
+            browser = MagicMock()
+            browser.__enter__.return_value.ensure_authenticated.return_value = object()
+
+            with (
+                patch("app.orchestrator.run.setup_logging"),
+                patch("app.orchestrator.run.cleanup_runtime_residue"),
+                patch("app.orchestrator.run.load_settings", return_value=settings),
+                patch("app.orchestrator.run.Soft4Browser", return_value=browser),
+                patch("app.orchestrator.run.download_csv") as attendant_download,
+                patch("app.orchestrator.run.download_csv_as", return_value=csv_path) as requester_download,
+                patch("app.orchestrator.run.montar_feriados", return_value=set()),
+                patch("app.orchestrator.run.parse_feriados_adicionais", return_value=set()),
+                patch("app.orchestrator.run.filtrar_csv_por_dias_uteis_sem_interacao"),
+                patch("app.orchestrator.run._dispatch_requester_reports") as dispatch_mock,
+                patch("app.orchestrator.run.send_dry_run_success_email") as dry_run_success_send,
+                patch("app.orchestrator.run.datetime") as datetime_mock,
+            ):
+                datetime_mock.now.return_value = datetime(2026, 6, 23, 8, 0, 0)
+                exit_code = run(dry_run=True, solicitante=True)
+
+            self.assertEqual(exit_code, 0)
+            dispatch_mock.assert_called_once()
+            self.assertTrue(dispatch_mock.call_args.kwargs["dry_run"])
+            attendant_download.assert_not_called()
+            requester_download.assert_called_once()
+            dry_run_success_send.assert_not_called()
 
     def test_setup_logging_writes_to_rotating_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

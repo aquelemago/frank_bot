@@ -145,23 +145,33 @@ download usa `SOFT4_TP_LISTAGEM_SOLICITANTE` como pre-filtro no Soft4.
 
 ## Execucao
 
-Execucao real:
+A automacao roda como dois servicos independentes, como no sistema anterior.
+
+Relatorio do atendente (envio para os atendentes e a gestora):
 
 ```powershell
 python main.py
+```
+
+Relatorio do solicitante (envio individual para cada solicitante e relatorio
+completo para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`):
+
+```powershell
+python main.py --solicitante
 ```
 
 Dry-run:
 
 ```powershell
 python main.py --dry-run
+python main.py --solicitante --dry-run
 ```
 
-O dry-run acessa o Soft4, baixa e filtra os CSVs do atendente e do solicitante,
-cria a fila e registra nos logs quais envios seriam feitos. Ele nao envia
-e-mails individuais nem os relatorios gerencial e do solicitante; apos uma
-simulacao bem-sucedida, envia apenas uma confirmacao para
-`lucas.silva@mainhardt.com.br`. Os itens da fila permanecem como `pending`.
+O dry-run acessa o Soft4, baixa e filtra o CSV do respectivo relatorio e registra
+nos logs quais envios seriam feitos, sem enviar e-mails. No relatorio do
+atendente, apos uma simulacao bem-sucedida, envia apenas uma confirmacao para
+`lucas.silva@mainhardt.com.br`; os itens da fila permanecem como `pending`. No
+relatorio do solicitante, nenhum e-mail e enviado em dry-run.
 
 Teste SMTP:
 

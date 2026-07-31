@@ -36,8 +36,9 @@ This is the first file an AI agent should read in this project.
 - Python automation for exporting the Soft4/Mainhardt support queue as CSV.
 - Main code lives under `app/`:
   - `app/main.py`: CLI only (`argparse` + `--dry-run`); reexports `run`.
-  - `app/orchestrator/run.py`: full automation flow (`run()`), dry-run plan
-    logging, exit codes, hardcoded dry-run recipient.
+- `app/orchestrator/run.py`: two service flows (`run()` dispatches to
+  `_run_attendant_report` / `_run_requester_report`), dry-run plan logging,
+  exit codes, hardcoded dry-run recipient.
   - `app/services/`: facade reexporting mailer send functions and queue
     symbols; the orchestrator imports its service layer from here.
   - `app/config/`: settings dataclasses (`models.py`) and env loading
@@ -53,8 +54,12 @@ This is the first file an AI agent should read in this project.
   - `app/requester/`: requester report delivery (group chamados by solicitante
     e-mail fetched from the Softdesk API).
   - `app/infra/`: cross-cutting infrastructure (logging, cleanup, fs).
-- Public command: `python main.py`.
-- Dry-run command: `python main.py --dry-run`.
+- Public commands (two independent services):
+  - `python main.py` — attendant report (atendentes + gestora).
+  - `python main.py --solicitante` — requester report (solicitantes + full
+    report to `EMAIL_SOLICITANTE_TODOS_CHAMADOS`).
+- Dry-run commands: `python main.py --dry-run` and
+  `python main.py --solicitante --dry-run`.
 - SMTP test command: `python tools/send_test_email.py`.
 - CSVs output: `downloads/fila_atendimento_YYYYMMDD_HHMMSS.csv` (atendente) and
   `downloads/solicitante_YYYYMMDD_HHMMSS.csv` (solicitante).

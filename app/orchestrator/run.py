@@ -141,9 +141,15 @@ def _dispatch_requester_reports(
             failures.append(f"Relatorio solicitante {delivery.recipient}: {error}")
 
 
-def run(dry_run: bool = False) -> int:
+def run(dry_run: bool = False, solicitante: bool = False) -> int:
     setup_logging()
     LOGGER.info("Iniciando automacao")
+    if solicitante:
+        return _run_requester_report(dry_run)
+    return _run_attendant_report(dry_run)
+
+
+def _run_attendant_report(dry_run: bool) -> int:
     if dry_run:
         LOGGER.warning(
             "Modo dry-run ativo: emails de atendimento nao serao enviados; "
@@ -165,27 +171,6 @@ def run(dry_run: bool = False) -> int:
                 auth_session = browser.ensure_authenticated()
                 csv_path = download_csv(settings.soft4, auth_session, settings.downloads_dir)
 
-            try:
-                requester_csv_path = download_csv_as(
-                    settings.soft4,
-                    auth_session,
-                    settings.requester_downloads_dir,
-                    settings.soft4.requester_listing_type,
-                    settings.soft4.no_interaction_requester_days,
-                    "solicitante",
-                )
-            except SessionExpiredError:
-                LOGGER.info("Sessao expirou durante o download do solicitante; refazendo login")
-                auth_session = browser.ensure_authenticated()
-                requester_csv_path = download_csv_as(
-                    settings.soft4,
-                    auth_session,
-                    settings.requester_downloads_dir,
-                    settings.soft4.requester_listing_type,
-                    settings.soft4.no_interaction_requester_days,
-                    "solicitante",
-                )
-
         data_atual = exported_at.date()
         feriados = montar_feriados(
             data_atual=data_atual,
@@ -199,14 +184,6 @@ def run(dry_run: bool = False) -> int:
             coluna_ultima_interacao=settings.email_queue.last_interaction_column,
         )
 
-        filtrar_csv_por_dias_uteis_sem_interacao(
-            source_csv=requester_csv_path,
-            data_atual=data_atual,
-            feriados=feriados,
-            limite_dias_uteis=settings.soft4.no_interaction_requester_days,
-            coluna_ultima_interacao=settings.requester_report.last_interaction_column,
-        )
-
         email_queue = build_attendant_email_queue(
             source_csv=csv_path,
             settings=settings.email_queue,
@@ -217,16 +194,9 @@ def run(dry_run: bool = False) -> int:
 
         if dry_run:
             _log_dry_run_plan(email_queue, settings.manager_report.recipient)
-            _dispatch_requester_reports(
-                settings,
-                requester_csv_path,
-                exported_at,
-                dry_run=True,
-                failures=[],
-            )
             LOGGER.info(
-                "Dry-run bem-sucedido: %s email(s) individual(is), o relatorio gerencial "
-                "e o relatorio do solicitante foram simulados, mas nao enviados. Fila mantida como pending em %s",
+                "Dry-run bem-sucedido: %s email(s) individual(is) e o relatorio gerencial "
+                "foram simulados, mas nao enviados. Fila mantida como pending em %s",
                 len(email_queue.items),
                 email_queue.queue_dir,
             )
@@ -270,17 +240,78 @@ def run(dry_run: bool = False) -> int:
         except Exception as error:
             failures.append(f"Relatorio gestora: {error}")
 
+        if failures:
+            joined = "; ".join(failures)
+            raise RuntimeError(f"Falha ao enviar alguns itens da fila: {joined}")
+
+        LOGGER.info("Automacao finalizada")
+        return 0
+    except ConfigError as error:
+        LOGGER.error("Falha de configuracao: %s", error)
+        return 2
+    except Exception as error:
+        LOGGER.exception("Falha na automacao: %s", error)
+        return 1
+    finally:
+        cleanup_runtime_residue(PROJECT_ROOT)
+
+
+def _run_requester_report(dry_run: bool) -> int:
+    if dry_run:
+        LOGGER.warning("Modo dry-run ativo: nenhum email do relatorio do solicitante sera enviado")
+    cleanup_runtime_residue(PROJECT_ROOT)
+
+    try:
+        settings = load_settings()
+        exported_at = datetime.now()
+
+        with Soft4Browser(settings.soft4) as browser:
+            auth_session = browser.ensure_authenticated()
+            try:
+                requester_csv_path = download_csv_as(
+                    settings.soft4,
+                    auth_session,
+                    settings.requester_downloads_dir,
+                    settings.soft4.requester_listing_type,
+                    settings.soft4.no_interaction_requester_days,
+                    "solicitante",
+                )
+            except SessionExpiredError:
+                LOGGER.info("Sessao expirou durante o download do solicitante; refazendo login")
+                auth_session = browser.ensure_authenticated()
+                requester_csv_path = download_csv_as(
+                    settings.soft4,
+                    auth_session,
+                    settings.requester_downloads_dir,
+                    settings.soft4.requester_listing_type,
+                    settings.soft4.no_interaction_requester_days,
+                    "solicitante",
+                )
+
+        data_atual = exported_at.date()
+        feriados = montar_feriados(
+            data_atual=data_atual,
+            feriados_adicionais=parse_feriados_adicionais(settings.soft4.additional_holidays),
+        )
+        filtrar_csv_por_dias_uteis_sem_interacao(
+            source_csv=requester_csv_path,
+            data_atual=data_atual,
+            feriados=feriados,
+            limite_dias_uteis=settings.soft4.no_interaction_requester_days,
+            coluna_ultima_interacao=settings.requester_report.last_interaction_column,
+        )
+
+        failures: list[str] = []
         _dispatch_requester_reports(
             settings,
             requester_csv_path,
             exported_at,
-            dry_run=False,
+            dry_run=dry_run,
             failures=failures,
         )
-
-        if failures:
+        if not dry_run and failures:
             joined = "; ".join(failures)
-            raise RuntimeError(f"Falha ao enviar alguns itens da fila: {joined}")
+            raise RuntimeError(f"Falha ao enviar relatorios do solicitante: {joined}")
 
         LOGGER.info("Automacao finalizada")
         return 0
