@@ -54,7 +54,8 @@ This is the first file an AI agent should read in this project.
 - Public command: `python main.py`.
 - Dry-run command: `python main.py --dry-run`.
 - SMTP test command: `python tools/send_test_email.py`.
-- Full CSV output: `downloads/fila_atendimento_YYYYMMDD_HHMMSS.csv`.
+- CSVs output: `downloads/fila_atendimento_YYYYMMDD_HHMMSS.csv` (atendente) and
+  `downloads/solicitante_YYYYMMDD_HHMMSS.csv` (solicitante).
 - E-mail queue output: `email_queue/YYYYMMDD_HHMMSS/`.
 - Rotating logs: `logs/frank_bot.log`.
 - Persistent browser profile: `perfil_soft4/`.

@@ -4,7 +4,7 @@ Automacao Python para acessar a fila de atendimento do Soft4/Mainhardt, baixar o
 CSV de chamados sem interacao do atendente, aplicar filtro local por dias uteis,
 separar a fila por atendente e enviar e-mails via SMTP com os anexos
 correspondentes. Em execucao real, tambem envia um relatorio consolidado para a
-gestora.
+gestora e um relatorio de chamados sem interacao do solicitante.
 
 ## Para Agentes De IA
 
@@ -65,6 +65,12 @@ EMAIL_ATENDENTES_FILE=config/email_atendente.env
 EMAIL_FALHAR_SE_ATENDENTE_SEM_EMAIL=false
 EMAIL_GESTORA_RELATORIO=francieli.cazuni@unus.solutions
 NOME_GESTORA_RELATORIO=Francieli
+
+CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE=ultima interacao solicitante
+SOFT4_TP_LISTAGEM_SOLICITANTE=SEM_INTERACAO_SOLICITANTE
+SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE=5
+EMAIL_SOLICITANTE_RELATORIO=lcabra570@gmail.com
+NOME_SOLICITANTE_RELATORIO=Teste
 ```
 
 Mapeie atendentes em `config/email_atendente.env`:
@@ -118,6 +124,11 @@ coluna `Dias sem interacao` como fallback para inferir a data aproximada.
 `SOFT4_FERIADOS_ADICIONAIS` aceita datas separadas por virgula ou ponto e
 virgula nos formatos `AAAA-MM-DD` ou `DD/MM/AAAA`.
 
+O mesmo filtro por dias uteis e aplicado ao CSV do solicitante, usando
+`SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` como limite e
+`CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE` como coluna de ultima interacao. O
+download usa `SOFT4_TP_LISTAGEM_SOLICITANTE` como pre-filtro no Soft4.
+
 ## Execucao
 
 Execucao real:
@@ -132,9 +143,10 @@ Dry-run:
 python main.py --dry-run
 ```
 
-O dry-run acessa o Soft4, baixa e filtra o CSV, cria a fila e registra nos logs
-quais envios seriam feitos. Ele nao envia e-mails individuais nem relatorio
-gerencial; apos uma simulacao bem-sucedida, envia apenas uma confirmacao para
+O dry-run acessa o Soft4, baixa e filtra os CSVs do atendente e do solicitante,
+cria a fila e registra nos logs quais envios seriam feitos. Ele nao envia
+e-mails individuais nem os relatorios gerencial e do solicitante; apos uma
+simulacao bem-sucedida, envia apenas uma confirmacao para
 `lucas.silva@mainhardt.com.br`. Os itens da fila permanecem como `pending`.
 
 Teste SMTP:
@@ -211,10 +223,11 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## Saidas Geradas
 
-CSV completo:
+CSVs baixados:
 
 ```text
 downloads/fila_atendimento_YYYYMMDD_HHMMSS.csv
+downloads/solicitante_YYYYMMDD_HHMMSS.csv
 ```
 
 Fila de e-mail:
