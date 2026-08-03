@@ -34,6 +34,25 @@ def download_csv(
     return output_path
 
 
+def download_csv_as(
+    settings: Soft4Settings,
+    session_data: AuthenticatedSession,
+    downloads_dir: Path,
+    listing_type: str,
+    no_interaction_days: int,
+    prefix: str,
+) -> Path:
+    content = _download_csv_with_browser_retries_as(
+        settings, session_data, listing_type, no_interaction_days,
+    )
+    _clear_previous_downloads_by_prefix(downloads_dir, prefix)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_path = downloads_dir / f"{prefix}_{timestamp}.csv"
+    output_path.write_bytes(content)
+    LOGGER.info("CSV baixado: %s", output_path)
+    return output_path
+
+
 def _clear_previous_downloads(downloads_dir: Path) -> None:
     downloads_dir.mkdir(parents=True, exist_ok=True)
     removed = 0
@@ -45,16 +64,34 @@ def _clear_previous_downloads(downloads_dir: Path) -> None:
         LOGGER.info("CSVs antigos removidos: %s", removed)
 
 
+def _clear_previous_downloads_by_prefix(downloads_dir: Path, prefix: str) -> None:
+    downloads_dir.mkdir(parents=True, exist_ok=True)
+    for item in downloads_dir.glob(f"{prefix}_*.csv"):
+        if item.is_file():
+            item.unlink()
+
+
 def _download_csv_with_browser_retries(
     settings: Soft4Settings,
     session_data: AuthenticatedSession,
+) -> bytes:
+    return _download_csv_with_browser_retries_as(
+        settings, session_data, settings.listing_type, settings.no_interaction_attendant_days,
+    )
+
+
+def _download_csv_with_browser_retries_as(
+    settings: Soft4Settings,
+    session_data: AuthenticatedSession,
+    listing_type: str,
+    no_interaction_days: int,
 ) -> bytes:
     last_error: Exception | None = None
 
     for attempt in range(1, settings.retries + 1):
         try:
             LOGGER.info("Solicitando CSV filtrado via POST (tentativa %s/%s)", attempt, settings.retries)
-            return _download_csv_from_page(settings, session_data)
+            return _download_csv_from_page_as(settings, session_data, listing_type, no_interaction_days)
         except SessionExpiredError:
             raise
         except Exception as error:
@@ -67,14 +104,39 @@ def _download_csv_with_browser_retries(
 
 
 def _download_csv_from_page(settings: Soft4Settings, session_data: AuthenticatedSession) -> bytes:
+    return _download_csv_from_page_as(settings, session_data, settings.listing_type, settings.no_interaction_attendant_days)
+
+
+def _download_csv_from_page_as(
+    settings: Soft4Settings,
+    session_data: AuthenticatedSession,
+    listing_type: str,
+    no_interaction_days: int,
+) -> bytes:
     page = session_data.page
-    content = bytes(_download_filtered_csv_via_fetch(page, settings))
+    content = bytes(_download_filtered_csv_via_fetch_as(page, settings, listing_type, no_interaction_days))
     LOGGER.info("CSV filtrado capturado via POST: %s bytes", len(content))
     return _validate_csv_content(content)
 
 
 def _download_filtered_csv_via_fetch(page, settings: Soft4Settings) -> list[int]:
-    payload = _build_queue_payload(settings, include_status_chamado=True)
+    return _download_filtered_csv_via_fetch_as(
+        page, settings, settings.listing_type, settings.no_interaction_attendant_days,
+    )
+
+
+def _download_filtered_csv_via_fetch_as(
+    page,
+    settings: Soft4Settings,
+    listing_type: str,
+    no_interaction_days: int,
+) -> list[int]:
+    payload = _build_queue_payload(
+        settings,
+        include_status_chamado=True,
+        listing_type=listing_type,
+        no_interaction_days=no_interaction_days,
+    )
     response = page.evaluate(
         """async ({ payload }) => {
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
@@ -122,14 +184,28 @@ def _download_filtered_csv_via_fetch(page, settings: Soft4Settings) -> list[int]
         {"payload": payload},
     )
     LOGGER.info(
-        "CSV solicitado com filtro: %s, dias sem interacao atendente=%s",
-        settings.listing_type,
-        settings.no_interaction_attendant_days,
+        "CSV solicitado com filtro: %s, dias sem interacao=%s",
+        listing_type,
+        no_interaction_days,
     )
     return response
 
 
-def _build_queue_payload(settings: Soft4Settings, include_status_chamado: bool) -> dict[str, object]:
+def _build_queue_payload(
+    settings: Soft4Settings,
+    include_status_chamado: bool,
+    *,
+    listing_type: str | None = None,
+    no_interaction_days: int | None = None,
+) -> dict[str, object]:
+    effective_listing_type = listing_type if listing_type is not None else settings.listing_type
+    requester_listing = effective_listing_type == settings.requester_listing_type
+    attendant_days = (
+        no_interaction_days
+        if no_interaction_days is not None and not requester_listing
+        else settings.no_interaction_attendant_days
+    )
+    requester_days = no_interaction_days if no_interaction_days is not None and requester_listing else 5
     payload: dict[str, object] = {
         "cd_area": 0,
         "cd_cliente": 0,
@@ -142,9 +218,9 @@ def _build_queue_payload(settings: Soft4Settings, include_status_chamado: bool) 
         "cd_tipo_chamado": [],
         "rotulo": ["CHAMADO_FILHO", "CODIGO", "DESCRICAO", "CLIENTE", "USUARIO", "ATENDENTE"],
         "tamanho_fonte": "12",
-        "tp_listagem": settings.listing_type,
-        "quantidade_dias_sem_interacao_atendente": str(settings.no_interaction_attendant_days),
-        "quantidade_dias_sem_interacao_solicitante": 5,
+        "tp_listagem": effective_listing_type,
+        "quantidade_dias_sem_interacao_atendente": str(attendant_days),
+        "quantidade_dias_sem_interacao_solicitante": requester_days,
         "cd_grupo_solucao": [],
         "campo_customizavel": [],
     }

@@ -5,6 +5,7 @@ from app.mailer import (
     send_attendant_csv_email,
     send_dry_run_success_email,
     send_manager_report_email,
+    send_requester_report_email,
     send_test_email,
 )
 from app.queue.repository import (
@@ -27,5 +28,6 @@ __all__ = [
     "send_attendant_csv_email",
     "send_dry_run_success_email",
     "send_manager_report_email",
+    "send_requester_report_email",
     "send_test_email",
 ]

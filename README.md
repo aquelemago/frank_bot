@@ -4,7 +4,7 @@ Automacao Python para acessar a fila de atendimento do Soft4/Mainhardt, baixar o
 CSV de chamados sem interacao do atendente, aplicar filtro local por dias uteis,
 separar a fila por atendente e enviar e-mails via SMTP com os anexos
 correspondentes. Em execucao real, tambem envia um relatorio consolidado para a
-gestora.
+gestora e um relatorio de chamados sem interacao do solicitante.
 
 ## Para Agentes De IA
 
@@ -40,8 +40,8 @@ Dependencias declaradas:
 - `python-dotenv>=1.0.1`
 - `requests>=2.31.0`
 
-Observacao: `requests` esta declarado, mas o codigo atual nao possui import
-direto dele. Confirme impacto operacional antes de remover.
+Observacao: `requests` e usado pelo cliente da API Softdesk
+(`app/soft4/api.py`) para o relatorio do solicitante.
 
 ## Configuracao
 
@@ -65,7 +65,26 @@ EMAIL_ATENDENTES_FILE=config/email_atendente.env
 EMAIL_FALHAR_SE_ATENDENTE_SEM_EMAIL=false
 EMAIL_GESTORA_RELATORIO=francieli.cazuni@unus.solutions
 NOME_GESTORA_RELATORIO=Francieli
+
+CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE=ultima interacao solicitante
+SOFT4_TP_LISTAGEM_SOLICITANTE=SEM_INTERACAO_SOLICITANTE
+SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE=5
+CSV_COLUNA_ID_CHAMADO=ID
+SOFTDESK_API_KEY=
+EMAIL_SOLICITANTE_RELATORIO=lcabral570@gmail.com
+NOME_SOLICITANTE_RELATORIO=Teste
+EMAIL_SOLICITANTE_TODOS_CHAMADOS=lcabral570@gmail.com
 ```
+
+Quando `SOFTDESK_API_KEY` estiver preenchida, o relatorio do solicitante e
+enviado individualmente para cada solicitante. A automacao consulta a API do
+Softdesk (`GET /api/api.php/chamado?codigo=<numero do chamado>`, cabecalho
+`hash-api`) para obter o e-mail do solicitante de cada chamado do CSV, agrupa os
+chamados por e-mail e envia um relatorio por destinatario. `CSV_COLUNA_ID_CHAMADO`
+indica a coluna com o numero do chamado. Alem dos solicitantes, o relatorio com
+todos os chamados tambem e enviado para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`
+(quando preenchida). Sem a chave, mantem o comportamento legado de enviar um
+unico relatorio para `EMAIL_SOLICITANTE_RELATORIO`.
 
 Mapeie atendentes em `config/email_atendente.env`:
 
@@ -88,6 +107,7 @@ SOFT4_FILA_PATH=/chamado/fila-de-atendimento
 SOFT4_CSV_PATH=/chamado/fila-de-atendimento/csv
 SOFT4_TIMEOUT_SECONDS=60
 SOFT4_RETRIES=3
+SOFT4_API_PATH=/api/api.php
 ```
 
 Compatibilidade legada:
@@ -118,24 +138,40 @@ coluna `Dias sem interacao` como fallback para inferir a data aproximada.
 `SOFT4_FERIADOS_ADICIONAIS` aceita datas separadas por virgula ou ponto e
 virgula nos formatos `AAAA-MM-DD` ou `DD/MM/AAAA`.
 
+O mesmo filtro por dias uteis e aplicado ao CSV do solicitante, usando
+`SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` como limite e
+`CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE` como coluna de ultima interacao. O
+download usa `SOFT4_TP_LISTAGEM_SOLICITANTE` como pre-filtro no Soft4.
+
 ## Execucao
 
-Execucao real:
+A automacao roda como dois servicos independentes, como no sistema anterior.
+
+Relatorio do atendente (envio para os atendentes e a gestora):
 
 ```powershell
 python main.py
+```
+
+Relatorio do solicitante (envio individual para cada solicitante e relatorio
+completo para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`):
+
+```powershell
+python main.py --solicitante
 ```
 
 Dry-run:
 
 ```powershell
 python main.py --dry-run
+python main.py --solicitante --dry-run
 ```
 
-O dry-run acessa o Soft4, baixa e filtra o CSV, cria a fila e registra nos logs
-quais envios seriam feitos. Ele nao envia e-mails individuais nem relatorio
-gerencial; apos uma simulacao bem-sucedida, envia apenas uma confirmacao para
-`lucas.silva@mainhardt.com.br`. Os itens da fila permanecem como `pending`.
+O dry-run acessa o Soft4, baixa e filtra o CSV do respectivo relatorio e registra
+nos logs quais envios seriam feitos, sem enviar e-mails. No relatorio do
+atendente, apos uma simulacao bem-sucedida, envia apenas uma confirmacao para
+`lucas.silva@mainhardt.com.br`; os itens da fila permanecem como `pending`. No
+relatorio do solicitante, nenhum e-mail e enviado em dry-run.
 
 Teste SMTP:
 
@@ -203,7 +239,8 @@ python -m unittest discover -s tests -p "test_*.py" -v
 |   |-- csv/                    # leitura de CSV + filtro de dias uteis
 |   |-- queue/                  # dominio da fila de e-mail
 |   |-- mailer/                 # transporte SMTP + templates + relatorio
-|   |-- soft4/                  # integracao externa (Playwright/Soft4)
+|   |-- soft4/                  # integracao externa (Playwright/Soft4) + API Softdesk
+|   |-- requester/              # entregas do relatorio por solicitante via API
 |   `-- infra/                  # logging, cleanup e helpers de filesystem
 |-- tests/
 `-- tools/
@@ -211,10 +248,11 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## Saidas Geradas
 
-CSV completo:
+CSVs baixados:
 
 ```text
 downloads/fila_atendimento_YYYYMMDD_HHMMSS.csv
+downloads/solicitante_YYYYMMDD_HHMMSS.csv
 ```
 
 Fila de e-mail:

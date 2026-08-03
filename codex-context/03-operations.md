@@ -12,22 +12,33 @@ browser profile data.
 
 ## Run
 
-Full run:
+The automation runs as two independent services. Attendant report (attendants +
+manager):
 
 ```powershell
 python main.py
+```
+
+Requester report (individual per requester + full report to
+`EMAIL_SOLICITANTE_TODOS_CHAMADOS`):
+
+```powershell
+python main.py --solicitante
 ```
 
 Safe functional simulation:
 
 ```powershell
 python main.py --dry-run
+python main.py --solicitante --dry-run
 ```
 
-Dry-run still accesses Soft4, downloads and filters the CSV, creates the queue,
-and sends a confirmation e-mail only to `lucas.silva@mainhardt.com.br`. It does
-not send individual attendant e-mails or the manager report, and queue items stay
-as `pending`.
+Attendant dry-run still accesses Soft4, downloads and filters the CSV, creates
+the queue, and sends a confirmation e-mail only to
+`lucas.silva@mainhardt.com.br`. It does not send individual attendant e-mails
+or the manager report, and queue items stay as `pending`. Requester dry-run
+downloads and filters the requester CSV and logs the planned sends; it sends
+no e-mails.
 
 SMTP test only:
 
@@ -96,6 +107,14 @@ Representative messages:
 - `Coluna de atendente nao encontrada`: adjust `CSV_COLUNA_ATENDENTE`.
 - `Atendentes sem e-mail configurado`: add `EMAIL_NOME_DO_ATENDENTE` entries or
   adjust `EMAIL_FALHAR_SE_ATENDENTE_SEM_EMAIL`.
+- `Nenhum numero de chamado encontrado no CSV do solicitante` or
+  `Coluna nao encontrada no CSV do solicitante`: adjust `CSV_COLUNA_ID_CHAMADO`.
+- `Chamado <n> nao encontrado na API Softdesk`: the chamado number has no
+  resolvable record; the chamado is ignored and logged.
+- `Rate limit da API Softdesk`: HTTP 429; the client retries after
+  `Retry-After` up to `SOFT4_RETRIES`.
+- `Falha ao consultar o chamado <n> na API Softdesk`: confirm
+  `SOFTDESK_API_KEY` and network access to the Softdesk endpoint.
 - SMTP errors: confirm host, port, username, password, MFA/app password, and
   authenticated SMTP permissions.
 

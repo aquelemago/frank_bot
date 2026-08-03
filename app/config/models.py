@@ -11,7 +11,11 @@ class Soft4Settings:
     csv_path: str
     listing_type: str
     no_interaction_attendant_days: int
+    requester_listing_type: str
+    no_interaction_requester_days: int
     additional_holidays: str
+    api_key: str
+    api_path: str
     usuario: str
     senha: str
     user_data_dir: Path
@@ -51,9 +55,20 @@ class ManagerReportSettings:
 
 
 @dataclass(frozen=True)
+class RequesterReportSettings:
+    recipient: str
+    name: str
+    last_interaction_column: str
+    id_column: str
+    full_report_recipient: str
+
+
+@dataclass(frozen=True)
 class AppSettings:
     soft4: Soft4Settings
     email: EmailSettings
     email_queue: EmailQueueSettings
     manager_report: ManagerReportSettings
+    requester_report: RequesterReportSettings
     downloads_dir: Path
+    requester_downloads_dir: Path
