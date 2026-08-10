@@ -41,7 +41,7 @@ def render_attendant_email(
     """
 
 
-def render_test_email(sent_at: datetime) -> str:
+def render_test_email(sent_at: datetime, include_signature: bool = False) -> str:
     return f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
@@ -59,6 +59,7 @@ def render_test_email(sent_at: datetime) -> str:
         <p>
           <strong>Data e hora do teste:</strong> {sent_at:%d/%m/%Y %H:%M:%S}
         </p>
+        {'<p><img src="cid:assinatura" alt="Assinatura Mainhardt" style="max-width: 100%; height: auto;"></p>' if include_signature else ''}
       </body>
     </html>
     """
@@ -100,6 +101,7 @@ def render_requester_report_email(
     no_interaction_days: int,
     total_rows: int,
     sections: str,
+    include_signature: bool = False,
 ) -> str:
     return f"""
     <html>
@@ -145,6 +147,7 @@ def render_requester_report_email(
         <p>
           Esta &eacute; uma mensagem autom&aacute;tica da rotina de apoio do Soft4.
         </p>
+        {'<p><img src="cid:assinatura" alt="Assinatura Mainhardt" style="max-width: 100%; height: auto;"></p>' if include_signature else ''}
       </body>
     </html>
     """

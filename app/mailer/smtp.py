@@ -3,7 +3,9 @@ from __future__ import annotations
 import smtplib
 from email import encoders
 from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
+from pathlib import Path
 
 
 class EmailSendError(RuntimeError):
@@ -32,6 +34,15 @@ def build_attachment(csv_path) -> MIMEBase:
         filename=csv_path.name,
     )
     return attachment
+
+
+def build_signature_image(signature_path: Path, cid: str) -> MIMEImage:
+    """Build an inline image for email signature."""
+    with open(signature_path, "rb") as img_file:
+        img = MIMEImage(img_file.read())
+        img.add_header("Content-ID", f"<{cid}>")
+        img.add_header("Content-Disposition", "inline", filename=signature_path.name)
+        return img
 
 
 def send_message(settings, message: MIMEMultipart, recipients: list[str]) -> None:

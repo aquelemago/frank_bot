@@ -13,6 +13,7 @@ from app.mailer.reports import build_manager_report_sections, _build_report_tabl
 from app.mailer.smtp import (
     EmailSendError,
     build_attachment,
+    build_signature_image,
     parse_recipients,
     send_message as _send_message,
 )
@@ -69,17 +70,29 @@ def send_test_email(
     settings: EmailSettings,
     recipient: str,
     sent_at: datetime | None = None,
+    include_signature: bool = False,
 ) -> None:
     sent_at = sent_at or datetime.now()
     recipients = parse_recipients(recipient)
 
-    message = MIMEMultipart()
+    # Create a multipart/related message for inline images
+    message = MIMEMultipart('related')
     message["From"] = settings.usuario
     message["To"] = ", ".join(recipients)
     message["Subject"] = f"Teste de envio - Automacao Soft4 - {sent_at:%d/%m/%Y %H:%M}"
 
-    html_body = render_test_email(sent_at=sent_at)
-    message.attach(MIMEText(html_body, "html", "utf-8"))
+    html_body = render_test_email(sent_at=sent_at, include_signature=include_signature)
+    
+    # Create an alternative part for HTML content
+    msg_alternative = MIMEMultipart('alternative')
+    message.attach(msg_alternative)
+    msg_alternative.attach(MIMEText(html_body, "html", "utf-8"))
+
+    # Add signature image as inline if requested
+    if include_signature:
+        signature_path = Path("assinatura.png")
+        if signature_path.exists():
+            message.attach(build_signature_image(signature_path, "assinatura"))
 
     try:
         _send_message(settings, message, recipients)
@@ -197,7 +210,8 @@ def send_requester_report_email(
     </table>
     """
 
-    message = MIMEMultipart()
+    # Create a multipart/related message for inline images
+    message = MIMEMultipart('related')
     message["From"] = settings.usuario
     message["To"] = ", ".join(recipients)
     message["Subject"] = (
@@ -210,8 +224,20 @@ def send_requester_report_email(
         no_interaction_days=no_interaction_days,
         total_rows=total_rows,
         sections=sections,
+        include_signature=True,  # Always include signature for requester reports
     )
-    message.attach(MIMEText(html_body, "html", "utf-8"))
+    
+    # Create an alternative part for HTML content
+    msg_alternative = MIMEMultipart('alternative')
+    message.attach(msg_alternative)
+    msg_alternative.attach(MIMEText(html_body, "html", "utf-8"))
+    
+    # Add signature image as inline
+    signature_path = Path("assinatura.png")
+    if signature_path.exists():
+        message.attach(build_signature_image(signature_path, "assinatura"))
+    
+    # Add CSV attachment
     message.attach(build_attachment(source_csv))
 
     try:
