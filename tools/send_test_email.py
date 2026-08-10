@@ -35,7 +35,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         settings = load_email_settings()
-        send_test_email(settings=settings, recipient=args.to)
+        send_test_email(settings=settings, recipient=args.to, include_signature=True)
     except ConfigError as error:
         logger.error("Falha de configuracao SMTP: %s", error)
         return 2

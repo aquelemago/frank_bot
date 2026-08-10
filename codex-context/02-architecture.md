@@ -124,10 +124,10 @@ main.py
   report assembly. The five public send functions live in
   `app/mailer/__init__.py`.
   - `app/mailer/smtp.py`: `EmailSendError`, `send_message` (SMTP TLS login),
-    `parse_recipients`, `build_attachment`.
+    `parse_recipients`, `build_attachment`, `build_signature_image` (inline image for email signatures).
   - `app/mailer/templates.py`: pure `render_*` functions returning HTML for
     the attendant, test, dry-run, manager-report, and requester-report
-    e-mails. HTML entities and styles preserved from the former
+    e-mails. Includes signature image support via `cid:assinatura`. HTML entities and styles preserved from the former
     `app/mailer.py`.
   - `app/mailer/reports.py`: `build_manager_report_sections` and helpers
     for reading the CSV and assembling per-attendant HTML tables. Keeps
@@ -137,7 +137,7 @@ main.py
   - `app/mailer/__init__.py`: public send functions
     (`send_attendant_csv_email`, `send_test_email`,
     `send_dry_run_success_email`, `send_manager_report_email`,
-    `send_requester_report_email`). Calls the transport via the module-local
+    `send_requester_report_email`). Includes inline signature image support for requester and test emails. Calls the transport via the module-local
     `_send_message` alias so test patches against `app.mailer._send_message`
     keep working.
 - `tools/send_test_email.py`: operational SMTP test script (imports from
@@ -220,6 +220,7 @@ Legacy compatibility:
 - Real requester execution sends one SMTP report per requester e-mail and a
   full report to `EMAIL_SOLICITANTE_TODOS_CHAMADOS` when configured (or a
   single legacy report to `EMAIL_SOLICITANTE_RELATORIO` without a key).
+- Requester and test emails include the `assinatura.png` image as an inline signature when the file exists in the project root.
 - Dry-run execution still sends a success confirmation e-mail to Lucas Silva
   (attendant flow); requester dry-run sends no e-mails.
 - Cleanup removes Python `__pycache__` directories outside `.venv` and
@@ -237,4 +238,6 @@ Treat these as generated data, not documentation source:
 - `logs/`
 - `perfil_soft4/`
 - `__pycache__/`
+
+Note: `assinatura.png` in the project root is a static asset used for email signatures and should be preserved.
 
