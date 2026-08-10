@@ -107,7 +107,7 @@ def render_requester_report_email(
         <p>Ol&aacute;, {html.escape(requester_name)}!</p>
 
         <p>
-          Identificamos que os chamados relacionados abaixo est&atilde;o aguardando retorno do solicitante e permanecem sem intera&ccedil;&atilde;o.
+          Identificamos que os chamados relacionados abaixo est&atilde;o aguardando retorno e permanecem sem intera&ccedil;&atilde;o.
         </p>
 
         <p>
