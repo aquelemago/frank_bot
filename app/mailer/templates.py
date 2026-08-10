@@ -18,8 +18,7 @@ def render_attendant_email(
 
         <p>
           Segue em anexo a rela&ccedil;&atilde;o de chamados vinculados ao seu atendimento
-          que est&atilde;o sem qualquer intera&ccedil;&atilde;o h&aacute; {no_interaction_days}
-          dias ou mais.
+          que est&atilde;o sem qualquer intera&ccedil;&atilde;o.
         </p>
 
         <p>
@@ -105,26 +104,46 @@ def render_requester_report_email(
     return f"""
     <html>
       <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
-        <p>Ola, {html.escape(requester_name)}.</p>
+        <p>Ol&aacute;, {html.escape(requester_name)}!</p>
 
         <p>
-          Segue o relatorio consolidado dos chamados sem interacao do solicitante ha
-          {no_interaction_days} dias ou mais.
+          Identificamos que os chamados relacionados abaixo est&atilde;o aguardando retorno do solicitante e permanecem sem intera&ccedil;&atilde;o h&aacute; {no_interaction_days} dias.
+        </p>
+
+        <p>
+          Solicitamos, por gentileza, que os chamados sejam avaliados e que seja registrada uma intera&ccedil;&atilde;o sempre que poss&iacute;vel.
         </p>
 
         <p>
           <strong>Total de chamados:</strong> {total_rows}<br>
-          <strong>Data e hora da exportacao:</strong> {exported_at:%d/%m/%Y %H:%M:%S}
+          <strong>Data e hora da exporta&ccedil;&atilde;o:</strong> {exported_at:%d/%m/%Y %H:%M:%S}
         </p>
 
         {sections}
 
         <p>
-          O CSV completo da exportacao tambem segue em anexo para conferencia ou filtro.
+          Segue link da plataforma: <a href="https://mainhardt.soft4.com.br/chamado/fila-de-atendimento">Chamado - Softdesk</a>
         </p>
 
         <p>
-          Esta e uma mensagem automatica da rotina de apoio do Soft4.
+          Esse retorno &eacute; fundamental para que possamos dar continuidade ao atendimento. Caso ainda esteja realizando valida&ccedil;&otilde;es internas, basta registrar essa informa&ccedil;&atilde;o no pr&oacute;prio chamado. Assim, o atendimento permanece ativo e nossa equipe pode acompanhar a evolu&ccedil;&atilde;o da demanda.
+        </p>
+
+        <p>
+          <strong>Importante:</strong> conforme nosso fluxo de atendimento, os chamados que permanecerem sete dias consecutivos sem intera&ccedil;&atilde;o do solicitante s&atilde;o encerrados automaticamente por decurso de prazo. Se ainda houver necessidade de suporte, uma simples resposta no chamado &eacute; suficiente para mant&ecirc;-lo ativo.
+        </p>
+
+        <p>
+          Contamos com a sua colabora&ccedil;&atilde;o para mantermos os atendimentos em andamento e garantirmos maior agilidade na resolu&ccedil;&atilde;o das demandas.
+        </p>
+
+        <p>
+          Agradecemos pela parceria.<br>
+          Atenciosamente,
+        </p>
+
+        <p>
+          Esta &eacute; uma mensagem autom&aacute;tica da rotina de apoio do Soft4.
         </p>
       </body>
     </html>
