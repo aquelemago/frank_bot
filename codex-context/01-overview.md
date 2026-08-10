@@ -121,6 +121,7 @@ Inputs:
 - CSV returned by Soft4 through authenticated POST.
 - Softdesk API (`GET /api/api.php/chamado?codigo=<numero>`, header `hash-api`)
   when `SOFTDESK_API_KEY` is configured.
+- `assinatura.png` in the project root for email signature (optional).
 
 Outputs:
 
