@@ -3,6 +3,23 @@
 This file keeps lightweight architecture decision records. Add a dated entry
 when a change affects behavior, structure, operations, or long-term maintenance.
 
+## 2026-08-13 - Permanent Scheduler Startup On Windows
+
+Decision: run `service.py` with the virtual environment's `pythonw.exe` and
+start it after user login through `Frank Bot Scheduler.lnk` in the current
+user's Startup folder. Use a named Windows mutex as the source of truth for
+single-instance protection; keep `frank_bot_service.lock` only as PID
+diagnostic information.
+
+Reason: this keeps deployment simple and dependency-free, prevents concurrent
+use of the Chromium profile, and permits recovery after abrupt process exit
+without manual deletion of an orphaned lock.
+
+Status: shortcut configuration and direct startup were validated. Final
+confirmation after a real login or reboot remains pending. Authorized
+production validation completed both requester and attendant flows with exit
+code `0`; one attendant mapping (Rafaela Zen) remains operationally pending.
+
 ## 2026-07-28 - Documentation Structure For AI Orientation
 
 Decision: keep `CODEX_START_HERE.md` as the first AI entrypoint, keep

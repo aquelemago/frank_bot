@@ -2,6 +2,10 @@
 
 ## Current Risks And Technical Debt
 
+- Configure the attendant e-mail mapping for Rafaela Zen; her rows are skipped
+  while missing-attendant mappings are allowed.
+- After the next real login or reboot, confirm that the Startup shortcut creates
+  exactly one scheduler process and logs the correct next event.
 - Confirm the exact attendant column name in the production Soft4 CSV.
 - Confirm the exact last-interaction column name in the production Soft4 CSV.
 - Confirm whether `SOFT4_CSV_PATH` should be used by `app/soft4/downloader.py`;

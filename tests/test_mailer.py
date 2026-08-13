@@ -15,6 +15,19 @@ from app.mailer import (
 )
 
 
+def get_html_body(message) -> str:
+    html_part = next(
+        (part for part in message.walk() if part.get_content_type() == "text/html"),
+        None,
+    )
+    if html_part is None:
+        raise AssertionError("Mensagem sem parte text/html")
+    payload = html_part.get_payload(decode=True)
+    if payload is None:
+        raise AssertionError("Parte text/html sem payload decodificavel")
+    return payload.decode(html_part.get_content_charset() or "utf-8")
+
+
 class MailerTests(unittest.TestCase):
     def test_manager_report_uses_full_csv_and_sends_structured_html(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -113,7 +126,7 @@ class MailerTests(unittest.TestCase):
             message["Subject"],
             "Teste de envio - Automacao Soft4 - 24/06/2026 09:30",
         )
-        html_body = message.get_payload()[0].get_payload(decode=True).decode("utf-8")
+        html_body = get_html_body(message)
         self.assertIn("e-mail de teste da automacao Soft4/Mainhardt", html_body)
 
     def test_dry_run_success_email_goes_only_to_lucas(self) -> None:

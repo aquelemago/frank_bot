@@ -160,6 +160,123 @@ completo para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`):
 python main.py --solicitante
 ```
 
+Scheduler permanente, com os dois fluxos sequenciais:
+
+```powershell
+python service.py
+```
+
+Horarios diarios do scheduler, no formato `HH:MM`:
+
+```env
+FRANK_BOT_REQUESTER_TIME=08:00
+FRANK_BOT_ATTENDANT_TIME=09:00
+```
+
+Esses sao tambem os horarios padrao quando as variaveis nao existem. No
+Windows, `pythonw.exe service.py` pode ser usado para executar sem janela de
+console. O processo deve ser iniciado a partir da raiz do projeto. Ele impede
+uma segunda instancia por um mutex nomeado do Windows. O arquivo
+`frank_bot_service.lock` contem apenas o PID para diagnostico; um arquivo
+residual nao impede uma nova instancia depois que o processo anterior termina.
+
+O scheduler executa eventos atrasados em no maximo cinco minutos. Eventos mais
+antigos sao descartados e a proxima ocorrencia diaria e calculada, evitando uma
+rajada de envios depois de suspensao prolongada. Retornos ou excecoes de uma
+execucao sao registrados e nao encerram as proximas execucoes.
+
+Na instalacao operacional atual, o atalho `Frank Bot Scheduler.lnk` na pasta
+Inicializar do usuario executa o scheduler com o `pythonw.exe` da `.venv`. A
+configuracao do atalho foi validada; ainda e necessario confirmar uma unica
+instancia e o proximo evento no log depois do proximo login ou reinicio real.
+
+Se o log registrar `Atendentes sem e-mail configurado`, esses atendentes nao
+recebem relatorio individual quando a configuracao permite continuar. Complete
+o mapeamento `EMAIL_NOME_DO_ATENDENTE` ou habilite a falha obrigatoria antes de
+considerar a entrega completa.
+
+### Como a aplicacao esta rodando
+
+Atualmente, a aplicacao roda como um processo permanente `pythonw.exe`, sem
+janela de terminal. O processo foi iniciado pelo atalho:
+
+```text
+Frank Bot Scheduler.lnk
+```
+
+O atalho fica na pasta Inicializar do usuario e aponta para:
+
+```text
+C:\Users\node.js\Desktop\PRD\frank\frank_bot\.venv\Scripts\pythonw.exe
+```
+
+com o argumento:
+
+```text
+C:\Users\node.js\Desktop\PRD\frank\frank_bot\service.py
+```
+
+e usa a raiz do projeto como diretorio de trabalho. Depois do login do usuario,
+o Windows inicia esse atalho automaticamente. O scheduler mantem um unico
+processo, aguarda os horarios diarios e executa os fluxos sequencialmente:
+
+```text
+08:00 - solicitantes
+09:00 - atendentes
+```
+
+O acompanhamento deve ser feito em `logs/frank_bot.log`. O PID atual e gravado
+em `frank_bot_service.lock`; nao documente nem reutilize um PID antigo, pois ele
+muda sempre que o processo reinicia.
+
+### Como iniciar manualmente
+
+Abra o PowerShell na raiz do projeto. Para executar com terminal visivel:
+
+```powershell
+.\.venv\Scripts\python.exe service.py
+```
+
+Use `Ctrl+C` para encerrar essa forma de execucao.
+
+Para executar em segundo plano, sem janela:
+
+```powershell
+.\.venv\Scripts\pythonw.exe service.py
+```
+
+Nao inicie manualmente se o atalho ja tiver criado uma instancia. A segunda
+instancia sera rejeitada, mas deve-se evitar tentativas desnecessarias.
+
+### Como verificar, parar e reiniciar
+
+Para verificar o PID registrado e confirmar o processo:
+
+```powershell
+$schedulerPid = [int](Get-Content .\frank_bot_service.lock -Raw)
+Get-Process -Id $schedulerPid
+Get-Content .\logs\frank_bot.log -Tail 30
+```
+
+Para parar uma instancia sem janela, confirme primeiro que o PID pertence ao
+`pythonw` do Frank Bot e entao execute:
+
+```powershell
+$schedulerPid = [int](Get-Content .\frank_bot_service.lock -Raw)
+Get-Process -Id $schedulerPid
+Stop-Process -Id $schedulerPid
+```
+
+Depois, para reiniciar sem janela:
+
+```powershell
+.\.venv\Scripts\pythonw.exe service.py
+```
+
+Uma finalizacao forcada pode deixar `frank_bot_service.lock` no disco, mas o
+arquivo e apenas informativo. O mutex do Windows e liberado automaticamente e a
+nova instancia pode sobrescrever o PID residual.
+
 Dry-run:
 
 ```powershell
@@ -205,6 +322,12 @@ Testes unitarios:
 
 ```powershell
 python tests/run_unittest_discovery.py
+```
+
+Testes isolados do scheduler (sem Soft4 ou SMTP):
+
+```powershell
+python -m unittest tests.test_service -v
 ```
 
 Alternativa:

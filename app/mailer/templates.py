@@ -18,7 +18,8 @@ def render_attendant_email(
 
         <p>
           Segue em anexo a rela&ccedil;&atilde;o de chamados vinculados ao seu atendimento
-          que est&atilde;o sem qualquer intera&ccedil;&atilde;o.
+          que est&atilde;o sem qualquer intera&ccedil;&atilde;o h&aacute; {no_interaction_days}
+          dias ou mais.
         </p>
 
         <p>

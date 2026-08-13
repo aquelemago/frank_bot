@@ -11,6 +11,19 @@ from app.mailer import send_requester_report_email
 from app.mailer.templates import render_requester_report_email
 
 
+def get_html_body(message) -> str:
+    html_part = next(
+        (part for part in message.walk() if part.get_content_type() == "text/html"),
+        None,
+    )
+    if html_part is None:
+        raise AssertionError("Mensagem sem parte text/html")
+    payload = html_part.get_payload(decode=True)
+    if payload is None:
+        raise AssertionError("Parte text/html sem payload decodificavel")
+    return payload.decode(html_part.get_content_charset() or "utf-8")
+
+
 class RequesterReportTests(unittest.TestCase):
     def test_requester_report_uses_full_csv_and_sends_structured_html(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -44,10 +57,10 @@ class RequesterReportTests(unittest.TestCase):
                 "Relatorio de chamados sem interacao do solicitante - 23/06/2026",
             )
             payload = message.get_payload()
-            html_body = payload[0].get_payload(decode=True).decode("utf-8")
-            self.assertIn("Ola, Solicitante.", html_body)
-            self.assertIn("sem interacao do solicitante ha", html_body)
-            self.assertIn("5 dias ou mais", html_body)
+            html_body = get_html_body(message)
+            self.assertIn("Ol&aacute;, Solicitante!", html_body)
+            self.assertIn("aguardando retorno", html_body)
+            self.assertIn("sete dias consecutivos", html_body)
             self.assertIn("Total de chamados:</strong> 2", html_body)
             self.assertIn("Chamado A", html_body)
             self.assertIn("Cliente X", html_body)
@@ -63,12 +76,12 @@ class RequesterReportTests(unittest.TestCase):
             sections=sections,
         )
 
-        self.assertIn("Ola, Teste.", html_body)
-        self.assertIn("sem interacao do solicitante ha", html_body)
-        self.assertIn("5 dias ou mais", html_body)
+        self.assertIn("Ol&aacute;, Teste!", html_body)
+        self.assertIn("aguardando retorno", html_body)
+        self.assertIn("sete dias consecutivos", html_body)
         self.assertIn("Total de chamados:</strong> 1", html_body)
         self.assertIn("<td>99</td>", html_body)
-        self.assertIn("O CSV completo da exportacao tambem segue em anexo", html_body)
+        self.assertIn("Segue link da plataforma", html_body)
 
 
 if __name__ == "__main__":
