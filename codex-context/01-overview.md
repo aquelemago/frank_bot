@@ -8,8 +8,9 @@ a local business-day filter for tickets without attendant interaction, splits
 the filtered CSV by attendant, and sends e-mails through SMTP. It also produces
 a requester report (tickets without requester interaction): in a real run with a
 `SOFTDESK_API_KEY`, one e-mail per requester is sent with the requester's own
-chamados plus a full report to `EMAIL_SOLICITANTE_TODOS_CHAMADOS`; without a key,
-a single legacy e-mail goes to `EMAIL_SOLICITANTE_RELATORIO`.
+chamados plus a full report to `EMAIL_SOLICITANTE_TODOS_CHAMADOS` and an optional
+second full-report copy to `EMAIL_SOLICITANTE_TODOS_CHAMADOS2`; without a key, a
+single legacy e-mail goes to `EMAIL_SOLICITANTE_RELATORIO`.
 
 The code is the source of truth. This document records the behavior observed in
 the current codebase.
@@ -24,7 +25,8 @@ the current codebase.
   `lucas.silva@mainhardt.com.br`.
 - `python main.py --solicitante`: runs the requester report only (individual
   e-mails per requester via the Softdesk API, plus the full report to
-  `EMAIL_SOLICITANTE_TODOS_CHAMADOS` when configured).
+  `EMAIL_SOLICITANTE_TODOS_CHAMADOS` and an optional second copy to
+  `EMAIL_SOLICITANTE_TODOS_CHAMADOS2` when configured).
 - `python main.py --solicitante --dry-run`: accesses Soft4, downloads and
   filters the requester CSV, logs the planned sends, and sends no e-mails.
 - `python tools/send_test_email.py`: sends a SMTP test e-mail without accessing
@@ -64,8 +66,9 @@ the current codebase.
 22. Resolve requester e-mails per chamado through the Softdesk API (using the
     chamado number in `CSV_COLUNA_ID_CHAMADO`) and group chamados by requester
     e-mail.
-23. Send one requester report per recipient and a full report to
-    `EMAIL_SOLICITANTE_TODOS_CHAMADOS` in a real run.
+23. Send one requester report per recipient, a full report to
+    `EMAIL_SOLICITANTE_TODOS_CHAMADOS`, and an optional second full-report copy
+    to `EMAIL_SOLICITANTE_TODOS_CHAMADOS2` in a real run.
 24. Fall back to a single legacy report to `EMAIL_SOLICITANTE_RELATORIO` when
     no `SOFTDESK_API_KEY` is configured.
 
@@ -99,14 +102,21 @@ the current codebase.
 - The manager report uses the locally filtered full CSV, not only the attendants
   with configured e-mail.
 - Requester report default listing type: `SEM_INTERACAO_SOLICITANTE`.
-- Requester threshold: 5 business days without requester interaction
+- Requester threshold: 3 business days without requester interaction
   (`SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE`), using
   `CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE` when present.
+- The requester report rows come from the authenticated Soft4 queue CSV
+  endpoint (`POST /chamado/fila-de-atendimento/csv`), not from the Softdesk API.
+  The API is used later only to resolve each chamado's requester e-mail.
+- The requester queue payload selects solution groups `118` (`Suporte
+  [MAINHARDT]`) and `257` (`Suporte [UNUS]`) and only status `8` (`Aguardando
+  solicitante`). Attendant status filters remain independent.
 - In a requester run with `SOFTDESK_API_KEY`, each chamado's requester e-mail is
   fetched from the Softdesk API; chamados without a resolvable e-mail are
   ignored and logged.
-- A real requester run sends one report per requester and a full report to
-  `EMAIL_SOLICITANTE_TODOS_CHAMADOS` when configured. Without a
+- A real requester run sends one report per requester, a full report to
+  `EMAIL_SOLICITANTE_TODOS_CHAMADOS`, and an optional second full-report copy to
+  `EMAIL_SOLICITANTE_TODOS_CHAMADOS2` when configured. Without a
   `SOFTDESK_API_KEY`, a single report goes to `EMAIL_SOLICITANTE_RELATORIO`.
 - Requester dry-run sends no e-mails.
 

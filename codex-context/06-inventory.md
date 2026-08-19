@@ -4,7 +4,8 @@
 
 - Date: 2026-07-28 (original audit); re-verified 2026-07-31 after the 10-step
   architecture refactor and again after the requester-report feature (etapas
-  1-13) on branch `feature/envia-email-para-solicitante`.
+  1-13) on branch `feature/envia-email-para-solicitante`; requester queue
+  filters and the 57-test suite re-verified on 2026-08-19.
 - Source of truth: current Python code, tests, `requirements.txt`, and Git
   metadata.
 - Repository state: this folder is a Git repository. During this audit,
@@ -55,11 +56,13 @@ Python entrypoints and modules:
 Tests:
 
 - `tests/run_unittest_discovery.py`
+- `tests/test_config_loader.py`
 - `tests/test_csv_filter.py`
 - `tests/test_email_queue.py`
 - `tests/test_mailer.py`
 - `tests/test_main_run.py`
 - `tests/test_soft4_api.py`
+- `tests/test_soft4_downloader.py`
 - `tests/test_requester_report.py`
 - `tests/test_requester_delivery.py`
 
@@ -106,6 +109,13 @@ Covered by current tests:
   (`tests/test_soft4_api.py`).
 - CLI `--solicitante` flag and requester-only dry-run
   (`tests/test_main_run.py`).
+- Requester configuration defaults and optional full-report copy settings
+  (`tests/test_config_loader.py`).
+- Independent requester/attendant queue payload filters, including requester
+  groups `[118, 257]`, status `[8]`, listing type, and 3-day threshold
+  (`tests/test_soft4_downloader.py`).
+- Propagation of requester days from orchestration through download and local
+  filter, including filter-before-dispatch ordering (`tests/test_main_run.py`).
 - SMTP test e-mail generation.
 - Dry-run confirmation e-mail generation.
 - CSV key normalization.
@@ -119,6 +129,16 @@ Safe validation commands:
 python -m compileall app tests
 python tests/run_unittest_discovery.py
 ```
+
+Windows deployment tooling:
+
+- `tools/install_windows_scheduled_tasks.ps1`: validates prerequisites and
+  idempotently registers the two daily jobs using a securely prompted technical
+  account; it never runs the jobs during installation.
+- `tools/uninstall_windows_scheduled_tasks.ps1`: validates or removes only the
+  two tasks managed under `\FrankBot\`.
+- `service.py`: legacy/fallback in-process scheduler; not the recommended
+  production deployment and unsafe to run concurrently with scheduled tasks.
 
 ## Generated And Sensitive Paths
 

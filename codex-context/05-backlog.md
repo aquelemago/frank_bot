@@ -4,15 +4,14 @@
 
 - Configure the attendant e-mail mapping for Rafaela Zen; her rows are skipped
   while missing-attendant mappings are allowed.
-- After the next real login or reboot, confirm that the Startup shortcut creates
-  exactly one scheduler process and logs the correct next event.
+- Validate exactly one occurrence of each newly installed Windows Task
+  Scheduler job in the next natural production windows, using task history and
+  new application log entries without a manual resend.
 - Confirm the exact attendant column name in the production Soft4 CSV.
 - Confirm the exact last-interaction column name in the production Soft4 CSV.
 - Confirm whether `SOFT4_CSV_PATH` should be used by `app/soft4/downloader.py`;
   the current browser-side fetch uses the literal
   `/chamado/fila-de-atendimento/csv` path.
-- Confirm whether the hard-coded queue payload values for solution groups and
-  statuses still match the Soft4 screen.
 - Test headless login with real credentials after any change to
   `app/soft4/browser.py`.
 - Test SMTP with a controlled Office365 account before releasing mailer changes.
@@ -25,6 +24,13 @@
 - Add tests for multiple recipients parsed by comma and semicolon.
 - Add a resend command for failed queue items without downloading a new CSV.
 - Add CI for `compileall` and `unittest`.
+
+## Resolved Risks
+
+- 2026-08-19: authenticated observation confirmed solution groups `118` and
+  `257`, requester status `8`, listing type `SEM_INTERACAO_SOLICITANTE`, and 3
+  days for both search and CSV requests. Requester and attendant status filters
+  are now covered independently by unit tests.
 
 ## Documentation Maintenance
 

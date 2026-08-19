@@ -3,6 +3,24 @@
 This file keeps lightweight architecture decision records. Add a dated entry
 when a change affects behavior, structure, operations, or long-term maintenance.
 
+## 2026-08-19 - Windows Task Scheduler For Production
+
+Decision: deploy two independent daily Windows Task Scheduler jobs, one for
+`main.py --solicitante` and one for `main.py`, under a dedicated technical
+account. Use the project installer to configure explicit working directory,
+`MultipleInstances=IgnoreNew`, a one-hour limit, no delayed start, and no
+automatic retry.
+
+Reason: these are two scheduled batch jobs, not a continuously served API. The
+native scheduler removes the dependency on an interactive user login, exposes
+task history and exit results, and avoids a permanently sleeping Python
+process. Disabling retries and late starts reduces duplicate or out-of-window
+e-mail risk.
+
+Status: supersedes the Startup-shortcut deployment decision below. Offline
+installer and rollback validation are complete; real registration requires the
+technical account credential through the Windows secure prompt.
+
 ## 2026-08-13 - Permanent Scheduler Startup On Windows
 
 Decision: run `service.py` with the virtual environment's `pythonw.exe` and
@@ -19,6 +37,9 @@ Status: shortcut configuration and direct startup were validated. Final
 confirmation after a real login or reboot remains pending. Authorized
 production validation completed both requester and attendant flows with exit
 code `0`; one attendant mapping (Rafaela Zen) remains operationally pending.
+
+Superseded on 2026-08-19 by the Windows Task Scheduler decision. `service.py`
+is retained only as a fallback and must not run with the scheduled tasks.
 
 ## 2026-07-28 - Documentation Structure For AI Orientation
 
@@ -110,8 +131,9 @@ independent service, following the plan tracked in
 Scope and outcome:
 
 - `SOFT4_TP_LISTAGEM_SOLICITANTE` (default `SEM_INTERACAO_SOLICITANTE`) and
-  `SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` (default 5) drive the requester CSV
-  download and local filter.
+  `SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` (default 5 at adoption; superseded by
+  the 2026-08-19 decision below) drive the requester CSV download and local
+  filter.
 - `app/soft4/api.py` uses `requests` to fetch each chamado's requester e-mail
   from the Softdesk API (`GET /api/api.php/chamado`, `hash-api` header, HTTP
   429 retry); `app/requester/delivery.py` groups chamados by requester e-mail.
@@ -129,4 +151,20 @@ the consolidated view.
 Status: accepted. Completed 2026-07-31. Validated with `compileall` and 27/27
 unit tests; real API validation of chamados 77934 and 78969 succeeded without
 sending e-mails.
+
+## 2026-08-19 - Requester Queue Filters Match The Soft4 Screen
+
+Decision: requester and attendant status filters must be independent. The
+requester queue uses solution groups `118` (`Suporte [MAINHARDT]`) and `257`
+(`Suporte [UNUS]`), status `8` (`Aguardando solicitante`), listing type
+`SEM_INTERACAO_SOLICITANTE`, and a default threshold of 3 days. The attendant
+queue preserves its existing status filter `[5, 1, 12, 0]`.
+
+Reason: authenticated observation of both the search and CSV requests produced
+the requester contract above. The previous shared status list and 5-day default
+selected chamados outside the approved requester report.
+
+Status: accepted. The search payload was observed directly; the CSV request was
+intercepted and aborted after its sanitized payload was captured, without
+reading operational data or sending e-mail.
 

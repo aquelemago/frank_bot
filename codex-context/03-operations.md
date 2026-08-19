@@ -26,98 +26,70 @@ Requester report (individual per requester + full report to
 python main.py --solicitante
 ```
 
-Permanent Python scheduler (requester and attendant flows run sequentially):
+## Recommended Windows Deployment
 
-```powershell
-python service.py
-```
-
-Daily schedule configuration uses local machine time and `HH:MM` values:
-
-```env
-FRANK_BOT_REQUESTER_TIME=08:00
-FRANK_BOT_ATTENDANT_TIME=09:00
-```
-
-Those values are the defaults. On Windows, `pythonw.exe service.py` runs
-without a console window. Logs continue in `logs/frank_bot.log`. Only one
-instance may hold the named Windows mutex associated with
-`frank_bot_service.lock`. The operating system releases the mutex when the
-process ends, including after an abrupt termination. The lock file contains the
-PID for diagnostics, but a residual file does not block a new instance.
-
-An occurrence delayed by at most five minutes is executed once. Older
-occurrences are discarded and the next daily occurrence is calculated. A
-non-zero application return or an exception is logged without permanently
-stopping the scheduler. Stop an interactive execution with `Ctrl+C`.
-
-## Current Scheduler Deployment
-
-- `Frank Bot Scheduler.lnk` is installed in the current user's Startup folder.
-- The shortcut uses the virtual environment's `pythonw.exe`, the absolute path
-  to `service.py`, and the project root as its working directory.
-- Target, arguments, working directory, startup through the shortcut, named
-  mutex protection, and duplicate-instance rejection were validated on
-  2026-08-13.
-- The requester and attendant production flows both completed with exit code
-  `0` during authorized validation.
-- The remaining production-readiness check is to confirm, after the next real
-  login or reboot, that exactly one instance starts and the next event in
-  `logs/frank_bot.log` is correct.
-- Rafaela Zen currently has no attendant e-mail mapping. Her attendant rows are
-  skipped while `EMAIL_FALHAR_SE_ATENDENTE_SEM_EMAIL` allows continuation.
-
-After a login or reboot, verify the scheduler with the PID stored in
-`frank_bot_service.lock` and inspect the latest log entries. Do not start a
-second permanent instance manually.
-
-## Running State And Operator Commands
-
-The deployed application runs as one permanent `pythonw.exe` process without a
-console. It is launched by `Frank Bot Scheduler.lnk` from the current user's
-Startup folder. The shortcut targets:
+Production scheduling uses two independent Windows Task Scheduler tasks rather
+than a permanently sleeping Python process:
 
 ```text
-C:\Users\node.js\Desktop\PRD\frank\frank_bot\.venv\Scripts\pythonw.exe
+08:00 - \FrankBot\Frank Bot - Solicitantes -> main.py --solicitante
+09:00 - \FrankBot\Frank Bot - Atendentes   -> main.py
 ```
 
-Its argument is the absolute path to `service.py`, and its working directory is
-the project root. The default daily schedule is requester at `08:00` and
-attendant at `09:00`, using local machine time. These values come from the
-scheduler process environment and are not loaded automatically from `.env`.
+The host must remain powered on and connected to the required corporate
+network. Use a dedicated, least-privileged technical account. Do not use
+`SYSTEM`; the Playwright profile and network access must belong to the
+operational identity.
 
-Start interactively from the project root:
+Deployment status on 2026-08-19: both tasks were registered and validated by
+the elevated installer, the legacy Startup shortcut was removed, and no report
+was executed during installation. The remaining acceptance step is to inspect
+Task Scheduler history and the application log after the next natural 08:00
+and 09:00 windows.
+
+Validate locally without registering or executing tasks:
 
 ```powershell
-.\.venv\Scripts\python.exe service.py
+.\tools\install_windows_scheduled_tasks.ps1 -ValidateOnly
 ```
 
-Stop an interactive instance with `Ctrl+C`. Start without a console:
+Install from an elevated PowerShell. Windows prompts securely for the technical
+account credential:
 
 ```powershell
-.\.venv\Scripts\pythonw.exe service.py
+.\tools\install_windows_scheduled_tasks.ps1 -RemoveLegacyStartupShortcut
 ```
 
-Inspect the deployed process and recent activity:
+Optional schedule parameters are `-RequesterTime HH:mm` and
+`-AttendantTime HH:mm`. The installer is idempotent and validates the registered
+actions. It sets the project root as working directory, uses the virtual
+environment Python, limits each run to one hour, and configures
+`MultipleInstances=IgnoreNew`. It deliberately disables delayed starts and
+automatic retries to prevent late or duplicate e-mails.
+
+The legacy Startup shortcut is removed only after both tasks validate and only
+when its target is confirmed as this project's `pythonw.exe service.py`.
+`service.py` remains a fallback in the repository, but must not run concurrently
+with the Windows tasks.
+
+Inspect definitions and last results without triggering a real send:
 
 ```powershell
-$schedulerPid = [int](Get-Content .\frank_bot_service.lock -Raw)
-Get-Process -Id $schedulerPid
+Get-ScheduledTask -TaskPath "\FrankBot\"
+Get-ScheduledTaskInfo -TaskPath "\FrankBot\" -TaskName "Frank Bot - Solicitantes"
+Get-ScheduledTaskInfo -TaskPath "\FrankBot\" -TaskName "Frank Bot - Atendentes"
 Get-Content .\logs\frank_bot.log -Tail 30
 ```
 
-Before stopping a background instance, verify that this PID belongs to the Frank
-Bot `pythonw` process. Then stop only that exact PID:
+Validate and execute rollback:
 
 ```powershell
-$schedulerPid = [int](Get-Content .\frank_bot_service.lock -Raw)
-Get-Process -Id $schedulerPid
-Stop-Process -Id $schedulerPid
+.\tools\uninstall_windows_scheduled_tasks.ps1 -ValidateOnly
+.\tools\uninstall_windows_scheduled_tasks.ps1
 ```
 
-Restart it with `pythonw.exe service.py` or invoke the Startup shortcut. A stale
-PID file after forced termination is diagnostic only; the named Windows mutex is
-released by the operating system and remains the source of truth for exclusivity.
+The uninstaller only addresses the two managed task names and requires
+confirmation. It does not restart the legacy scheduler.
 
 To run one flow directly instead of the permanent scheduler:
 
@@ -224,6 +196,10 @@ Representative messages:
   `Retry-After` up to `SOFT4_RETRIES`.
 - `Falha ao consultar o chamado <n> na API Softdesk`: confirm
   `SOFTDESK_API_KEY` and network access to the Softdesk endpoint.
+- Requester report contains unexpected chamados: confirm the effective request
+  uses groups `[118, 257]`, status `[8]`, listing type
+  `SEM_INTERACAO_SOLICITANTE`, and 3 days. The Softdesk API only resolves
+  requester e-mails and does not select report rows.
 - SMTP errors: confirm host, port, username, password, MFA/app password, and
   authenticated SMTP permissions.
 

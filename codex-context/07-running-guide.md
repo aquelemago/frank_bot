@@ -51,14 +51,14 @@ python main.py --solicitante
 
 **O que faz:**
 - Baixa o CSV de chamados sem interação de solicitantes
-- Filtra chamados com 5 dias úteis sem interação (configurável)
+- Filtra chamados com 3 dias úteis sem interação (configurável)
 - Consulta a API do Softdesk para obter emails dos solicitantes
 - Envia email individual para cada solicitante com seus chamados
 - Inclui a assinatura da Mainhardt no email
 - Salva os arquivos na pasta `downloads/` com prefixo `solicitante_`
 
 **Configurações relevantes:**
-- `SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE`: Dias sem interação (padrão: 5)
+- `SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE`: Dias sem interação (padrão: 3)
 - `SOFTDESK_API_KEY`: Chave para consultar emails dos solicitantes
 - `EMAIL_SOLICITANTE_RELATORIO`: Email padrão para relatório de solicitantes
 - `EMAIL_SOLICITANTE_TODOS_CHAMADOS`: Email para cópia do relatório completo
@@ -123,18 +123,31 @@ Após a execução, verifique:
 - Verifique se o navegador está autenticado (pasta `perfil_soft4/`)
 - Verifique a conexão com a internet
 
-## Agendamento
+## Agendamento profissional no Windows
 
-Para agendar execuções automáticas, você pode usar o cron (Linux) ou Task Scheduler (Windows).
+A implantação recomendada usa duas tarefas do Agendador do Windows em uma
+máquina sempre ligada. Valide sem alterar o sistema:
 
-Exemplo de cron para executar diariamente às 8h:
-```bash
-0 8 * * * /caminho/para/o/projeto/venv/bin/python /caminho/para/o/projeto/main.py --solicitante
+```powershell
+.\tools\install_windows_scheduled_tasks.ps1 -ValidateOnly
 ```
 
-Exemplo para atendentes:
-```bash
-0 9 * * * /caminho/para/o/projeto/venv/bin/python /caminho/para/o/projeto/main.py
+Depois, em um PowerShell elevado, instale com uma conta técnica. A credencial é
+solicitada diretamente pelo Windows e não deve ser colocada no comando:
+
+```powershell
+.\tools\install_windows_scheduled_tasks.ps1 -RemoveLegacyStartupShortcut
+```
+
+O instalador cria o fluxo de solicitantes às 08:00 e o de atendentes às 09:00,
+sem executar nenhum deles durante a instalação. Para consultar, use
+`Get-ScheduledTask -TaskPath "\FrankBot\"`. Não mantenha `service.py` ativo ao
+mesmo tempo.
+
+Para validar o rollback sem remover nada:
+
+```powershell
+.\tools\uninstall_windows_scheduled_tasks.ps1 -ValidateOnly
 ```
 
 ## Notas Importantes

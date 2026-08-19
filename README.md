@@ -68,12 +68,13 @@ NOME_GESTORA_RELATORIO=Francieli
 
 CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE=ultima interacao solicitante
 SOFT4_TP_LISTAGEM_SOLICITANTE=SEM_INTERACAO_SOLICITANTE
-SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE=5
+SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE=3
 CSV_COLUNA_ID_CHAMADO=ID
 SOFTDESK_API_KEY=
 EMAIL_SOLICITANTE_RELATORIO=lcabral570@gmail.com
 NOME_SOLICITANTE_RELATORIO=Teste
 EMAIL_SOLICITANTE_TODOS_CHAMADOS=lcabral570@gmail.com
+EMAIL_SOLICITANTE_TODOS_CHAMADOS2=
 ```
 
 Quando `SOFTDESK_API_KEY` estiver preenchida, o relatorio do solicitante e
@@ -83,7 +84,9 @@ Softdesk (`GET /api/api.php/chamado?codigo=<numero do chamado>`, cabecalho
 chamados por e-mail e envia um relatorio por destinatario. `CSV_COLUNA_ID_CHAMADO`
 indica a coluna com o numero do chamado. Alem dos solicitantes, o relatorio com
 todos os chamados tambem e enviado para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`
-(quando preenchida). Sem a chave, mantem o comportamento legado de enviar um
+(quando preenchida). Se `EMAIL_SOLICITANTE_TODOS_CHAMADOS2` estiver preenchida,
+o mesmo relatorio completo tambem e enviado como uma segunda copia opcional a
+esse destinatario. Sem a chave, mantem o comportamento legado de enviar um
 unico relatorio para `EMAIL_SOLICITANTE_RELATORIO`.
 
 Mapeie atendentes em `config/email_atendente.env`:
@@ -143,6 +146,43 @@ O mesmo filtro por dias uteis e aplicado ao CSV do solicitante, usando
 `CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE` como coluna de ultima interacao. O
 download usa `SOFT4_TP_LISTAGEM_SOLICITANTE` como pre-filtro no Soft4.
 
+### Como o relatorio de solicitantes e coletado
+
+O relatorio nao e baixado pela API Softdesk. A aplicacao abre uma sessao
+autenticada no Soft4 com Playwright e faz `POST` no endpoint literal:
+
+```text
+/chamado/fila-de-atendimento/csv
+```
+
+O payload atual usa `SOFT4_TP_LISTAGEM_SOLICITANTE` (padrao
+`SEM_INTERACAO_SOLICITANTE`) em `tp_listagem` e
+`SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` (padrao `3`) em
+`quantidade_dias_sem_interacao_solicitante`. Ele tambem envia filtros fixos do
+codigo:
+
+```text
+cd_grupo_solucao_fila_atendimento = [118, 257]
+st_chamado = [8]
+```
+
+Os grupos foram confirmados no Soft4 como `Suporte [MAINHARDT]` (`118`) e
+`Suporte [UNUS]` (`257`); o status `8` corresponde a `Aguardando solicitante`.
+O fluxo de atendentes preserva seus status proprios `[5, 1, 12, 0]`.
+
+O CSV e salvo como `downloads/solicitante_YYYYMMDD_HHMMSS.csv` e passa por um
+segundo filtro local de dias uteis, fins de semana e feriados. Somente depois
+desse processamento a API Softdesk consulta cada numero de chamado por
+`GET /api/api.php/chamado?codigo=<numero>` para descobrir o e-mail do
+solicitante. Essa API enriquece os registros; ela nao escolhe nem gera o
+relatorio.
+
+Se o relatorio correto estiver na mesma fila e diferir somente pelo tipo de
+listagem ou limite de dias, ajuste as duas variaveis acima. Se estiver em outra
+tela, endpoint, grupo ou conjunto de status, sera necessario alterar e testar o
+endpoint ou payload em `app/soft4/downloader.py`; mudar apenas a API Softdesk ou
+os destinatarios nao altera os chamados coletados.
+
 ## Execucao
 
 A automacao roda como dois servicos independentes, como no sistema anterior.
@@ -160,122 +200,77 @@ completo para `EMAIL_SOLICITANTE_TODOS_CHAMADOS`):
 python main.py --solicitante
 ```
 
-Scheduler permanente, com os dois fluxos sequenciais:
+Implantacao recomendada no Windows: duas tarefas independentes no Agendador de
+Tarefas. A maquina deve permanecer ligada e ter acesso ao Soft4, Softdesk e
+SMTP nos horarios configurados.
+
+Valide os pre-requisitos sem registrar nem executar tarefas:
 
 ```powershell
-python service.py
+.\tools\install_windows_scheduled_tasks.ps1 -ValidateOnly
 ```
 
-Horarios diarios do scheduler, no formato `HH:MM`:
+Para instalar, abra o PowerShell como administrador e execute:
 
-```env
-FRANK_BOT_REQUESTER_TIME=08:00
-FRANK_BOT_ATTENDANT_TIME=09:00
+```powershell
+.\tools\install_windows_scheduled_tasks.ps1 -RemoveLegacyStartupShortcut
 ```
 
-Esses sao tambem os horarios padrao quando as variaveis nao existem. No
-Windows, `pythonw.exe service.py` pode ser usado para executar sem janela de
-console. O processo deve ser iniciado a partir da raiz do projeto. Ele impede
-uma segunda instancia por um mutex nomeado do Windows. O arquivo
-`frank_bot_service.lock` contem apenas o PID para diagnostico; um arquivo
-residual nao impede uma nova instancia depois que o processo anterior termina.
+O Windows solicita a credencial da conta tecnica em uma janela segura. A senha
+nao e gravada pelo projeto. O instalador registra:
 
-O scheduler executa eventos atrasados em no maximo cinco minutos. Eventos mais
-antigos sao descartados e a proxima ocorrencia diaria e calculada, evitando uma
-rajada de envios depois de suspensao prolongada. Retornos ou excecoes de uma
-execucao sao registrados e nao encerram as proximas execucoes.
+```text
+08:00 - \FrankBot\Frank Bot - Solicitantes -> main.py --solicitante
+09:00 - \FrankBot\Frank Bot - Atendentes   -> main.py
+```
 
-Na instalacao operacional atual, o atalho `Frank Bot Scheduler.lnk` na pasta
-Inicializar do usuario executa o scheduler com o `pythonw.exe` da `.venv`. A
-configuracao do atalho foi validada; ainda e necessario confirmar uma unica
-instancia e o proximo evento no log depois do proximo login ou reinicio real.
+Estado operacional em 19/08/2026: as duas tarefas foram registradas e validadas
+pelo instalador elevado, o atalho legado da pasta Inicializar foi removido e os
+fluxos nao foram executados durante a instalacao. Falta apenas validar o
+Historico do Agendador e o log depois das proximas janelas naturais.
+
+Os horarios podem ser alterados com `-RequesterTime HH:mm` e
+`-AttendantTime HH:mm`. As tarefas usam o Python da `.venv`, a raiz do projeto
+como diretorio de trabalho, limite de uma hora e politica `IgnoreNew`. Elas nao
+executam atrasadas depois de a maquina voltar a ligar e nao repetem
+automaticamente uma falha, evitando duplicidade de e-mails.
+
+Use uma conta tecnica dedicada com permissao minima sobre a pasta do projeto e
+acesso de rede. Nao use `SYSTEM`. A opcao de remocao do atalho legado so apaga
+`Frank Bot Scheduler.lnk` depois de confirmar que ele aponta para o
+`service.py` deste projeto e depois de validar as duas tarefas.
 
 Se o log registrar `Atendentes sem e-mail configurado`, esses atendentes nao
 recebem relatorio individual quando a configuracao permite continuar. Complete
 o mapeamento `EMAIL_NOME_DO_ATENDENTE` ou habilite a falha obrigatoria antes de
 considerar a entrega completa.
 
-### Como a aplicacao esta rodando
+### Como verificar e remover o agendamento
 
-Atualmente, a aplicacao roda como um processo permanente `pythonw.exe`, sem
-janela de terminal. O processo foi iniciado pelo atalho:
-
-```text
-Frank Bot Scheduler.lnk
-```
-
-O atalho fica na pasta Inicializar do usuario e aponta para:
-
-```text
-C:\Users\node.js\Desktop\PRD\frank\frank_bot\.venv\Scripts\pythonw.exe
-```
-
-com o argumento:
-
-```text
-C:\Users\node.js\Desktop\PRD\frank\frank_bot\service.py
-```
-
-e usa a raiz do projeto como diretorio de trabalho. Depois do login do usuario,
-o Windows inicia esse atalho automaticamente. O scheduler mantem um unico
-processo, aguarda os horarios diarios e executa os fluxos sequencialmente:
-
-```text
-08:00 - solicitantes
-09:00 - atendentes
-```
-
-O acompanhamento deve ser feito em `logs/frank_bot.log`. O PID atual e gravado
-em `frank_bot_service.lock`; nao documente nem reutilize um PID antigo, pois ele
-muda sempre que o processo reinicia.
-
-### Como iniciar manualmente
-
-Abra o PowerShell na raiz do projeto. Para executar com terminal visivel:
+Consulte as tarefas e seus ultimos resultados sem executar os fluxos:
 
 ```powershell
-.\.venv\Scripts\python.exe service.py
-```
-
-Use `Ctrl+C` para encerrar essa forma de execucao.
-
-Para executar em segundo plano, sem janela:
-
-```powershell
-.\.venv\Scripts\pythonw.exe service.py
-```
-
-Nao inicie manualmente se o atalho ja tiver criado uma instancia. A segunda
-instancia sera rejeitada, mas deve-se evitar tentativas desnecessarias.
-
-### Como verificar, parar e reiniciar
-
-Para verificar o PID registrado e confirmar o processo:
-
-```powershell
-$schedulerPid = [int](Get-Content .\frank_bot_service.lock -Raw)
-Get-Process -Id $schedulerPid
+Get-ScheduledTask -TaskPath "\FrankBot\"
+Get-ScheduledTaskInfo -TaskPath "\FrankBot\" -TaskName "Frank Bot - Solicitantes"
+Get-ScheduledTaskInfo -TaskPath "\FrankBot\" -TaskName "Frank Bot - Atendentes"
 Get-Content .\logs\frank_bot.log -Tail 30
 ```
 
-Para parar uma instancia sem janela, confirme primeiro que o PID pertence ao
-`pythonw` do Frank Bot e entao execute:
+Valide o rollback sem alterar o Windows:
 
 ```powershell
-$schedulerPid = [int](Get-Content .\frank_bot_service.lock -Raw)
-Get-Process -Id $schedulerPid
-Stop-Process -Id $schedulerPid
+.\tools\uninstall_windows_scheduled_tasks.ps1 -ValidateOnly
 ```
 
-Depois, para reiniciar sem janela:
+Remova apenas as duas tarefas gerenciadas, com confirmacao do PowerShell:
 
 ```powershell
-.\.venv\Scripts\pythonw.exe service.py
+.\tools\uninstall_windows_scheduled_tasks.ps1
 ```
 
-Uma finalizacao forcada pode deixar `frank_bot_service.lock` no disco, mas o
-arquivo e apenas informativo. O mutex do Windows e liberado automaticamente e a
-nova instancia pode sobrescrever o PID residual.
+`service.py` permanece no repositorio apenas como fallback. Nao execute o
+scheduler permanente junto com as tarefas do Windows, pois isso pode duplicar
+envios.
 
 Dry-run:
 

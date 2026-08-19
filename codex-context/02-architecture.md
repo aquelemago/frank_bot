@@ -39,6 +39,7 @@ main.py
            -> if SOFTDESK_API_KEY: _dispatch_requester_reports()
                 build_requester_deliveries() via API -> per-requester sends
                 + full report to EMAIL_SOLICITANTE_TODOS_CHAMADOS
+                + optional second full copy to EMAIL_SOLICITANTE_TODOS_CHAMADOS2
               else: single legacy report to EMAIL_SOLICITANTE_RELATORIO
            -> dry-run branch (no e-mails) OR real SMTP branch
            -> cleanup_runtime_residue()
@@ -155,6 +156,51 @@ main.py
 `SOFT4_CSV_PATH` is loaded into settings, but the current browser-side fetch uses
 the literal CSV path above.
 
+### Requester report collection
+
+The requester flow does not obtain its report rows from the Softdesk API. Its
+current collection pipeline is:
+
+```text
+Soft4 authenticated browser session
+  -> POST /chamado/fila-de-atendimento/csv
+  -> downloads/solicitante_YYYYMMDD_HHMMSS.csv
+  -> local business-day filter
+  -> Softdesk API lookup per chamado (requester e-mail only)
+  -> grouping and SMTP delivery
+```
+
+`app.soft4.downloader._build_queue_payload()` currently sends the requester
+selection through these fields:
+
+```text
+tp_listagem = SOFT4_TP_LISTAGEM_SOLICITANTE
+quantidade_dias_sem_interacao_solicitante = SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE
+cd_grupo_solucao_fila_atendimento = [118, 257]
+st_chamado = [8]
+```
+
+The listing type defaults to `SEM_INTERACAO_SOLICITANTE` and the threshold
+defaults to `3`. The solution groups were confirmed in the Soft4 screen as
+`118 = Suporte [MAINHARDT]` and `257 = Suporte [UNUS]`; status `8` is
+`Aguardando solicitante`. The requester status filter is selected independently
+from the attendant filter `[5, 1, 12, 0]`. After the download,
+`filtrar_csv_por_dias_uteis_sem_interacao()` applies the requester threshold
+again using business days, weekends, national/additional holidays, and the
+configured last-interaction column.
+
+Only after the CSV is selected and filtered does `app/soft4/api.py` call
+`GET <base_url><api_path>/chamado?codigo=<numero>` with `hash-api`. That call
+resolves the requester e-mail for grouping and does not select, generate, or
+download the report.
+
+Consequently, changing only Softdesk API settings or e-mail recipients cannot
+change which chamados are collected. A report on the same queue may be changed
+through the listing type or day threshold when those are the only differing
+criteria. A report from another Soft4 screen, endpoint, solution group, or set
+of statuses requires a scoped change to the downloader payload/endpoint and
+corresponding tests.
+
 ## Configuration Surface
 
 Soft4:
@@ -191,12 +237,13 @@ CSV and e-mail:
 Requester report:
 
 - `SOFT4_TP_LISTAGEM_SOLICITANTE` (default `SEM_INTERACAO_SOLICITANTE`)
-- `SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` (default `5`)
+- `SOFT4_DIAS_SEM_INTERACAO_SOLICITANTE` (default `3`)
 - `CSV_COLUNA_ULTIMA_INTERACAO_SOLICITANTE`
 - `CSV_COLUNA_ID_CHAMADO`
 - `EMAIL_SOLICITANTE_RELATORIO` (required)
 - `NOME_SOLICITANTE_RELATORIO`
 - `EMAIL_SOLICITANTE_TODOS_CHAMADOS` (full report copy; optional)
+- `EMAIL_SOLICITANTE_TODOS_CHAMADOS2` (second full report copy; optional)
 
 Legacy compatibility:
 
@@ -217,9 +264,10 @@ Legacy compatibility:
 - `build_attendant_email_queue()` removes old queue directories before creating
   the current queue.
 - Real execution sends SMTP e-mails to attendants and the manager.
-- Real requester execution sends one SMTP report per requester e-mail and a
-  full report to `EMAIL_SOLICITANTE_TODOS_CHAMADOS` when configured (or a
-  single legacy report to `EMAIL_SOLICITANTE_RELATORIO` without a key).
+- Real requester execution sends one SMTP report per requester e-mail, a full
+  report to `EMAIL_SOLICITANTE_TODOS_CHAMADOS`, and an optional second full copy
+  to `EMAIL_SOLICITANTE_TODOS_CHAMADOS2` when configured (or a single legacy
+  report to `EMAIL_SOLICITANTE_RELATORIO` without a key).
 - Requester and test emails include the `assinatura.png` image as an inline signature when the file exists in the project root.
 - Dry-run execution still sends a success confirmation e-mail to Lucas Silva
   (attendant flow); requester dry-run sends no e-mails.
@@ -240,4 +288,19 @@ Treat these as generated data, not documentation source:
 - `__pycache__/`
 
 Note: `assinatura.png` in the project root is a static asset used for email signatures and should be preserved.
+
+## Deployment Topology
+
+The recommended production host is an always-on Windows machine or VM with two
+native Task Scheduler jobs under a dedicated technical account. Each job starts
+one existing CLI flow and exits; no application process needs to remain alive
+between schedules. The tasks share the project installation, persistent
+Playwright profile, logs, and configuration, and use
+`MultipleInstances=IgnoreNew` to reject overlap.
+
+`service.py` remains Windows-specific because its lock uses `kernel32`. It is a
+fallback, not the primary deployment. Docker is not part of the current
+topology because it would require a portable lock, external scheduling,
+persistent volumes for the browser profile and runtime data, and a separate
+secret-management design.
 
