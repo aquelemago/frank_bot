@@ -214,7 +214,7 @@ def _build_queue_payload(
         "cd_grupo_solucao_fila_atendimento": [118, 257],
         "cd_campo_customizavel": [],
         "cd_atendente": [],
-        "st_chamado": [5, 1, 12, 0],
+        "st_chamado": [8] if requester_listing else [5, 1, 12, 0],
         "cd_tipo_chamado": [],
         "rotulo": ["CHAMADO_FILHO", "CODIGO", "DESCRICAO", "CLIENTE", "USUARIO", "ATENDENTE"],
         "tamanho_fonte": "12",

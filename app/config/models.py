@@ -61,6 +61,7 @@ class RequesterReportSettings:
     last_interaction_column: str
     id_column: str
     full_report_recipient: str
+    full_report_recipient2: str
 
 
 @dataclass(frozen=True)

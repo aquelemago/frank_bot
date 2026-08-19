@@ -142,6 +142,7 @@ class MainRunTests(unittest.TestCase):
                     name="Solicitante",
                     id_column="ID",
                     full_report_recipient="lcabral570@gmail.com",
+                    full_report_recipient2="gestor@example.com",
                 ),
                 requester_downloads_dir=root / "entregas",
             )
@@ -169,10 +170,11 @@ class MainRunTests(unittest.TestCase):
                 )
 
             self.assertEqual(failures, [])
-            self.assertEqual(send_mock.call_count, 2)
+            self.assertEqual(send_mock.call_count, 3)
             sent_recipients = [call.kwargs["recipient"] for call in send_mock.call_args_list]
             self.assertIn("bruna@example.com", sent_recipients)
             self.assertIn("lcabral570@gmail.com", sent_recipients)
+            self.assertIn("gestor@example.com", sent_recipients)
             full_report_call = [
                 call
                 for call in send_mock.call_args_list
@@ -180,17 +182,140 @@ class MainRunTests(unittest.TestCase):
             ][0]
             self.assertEqual(full_report_call.kwargs["source_csv"], source_csv)
             self.assertEqual(full_report_call.kwargs["requester_name"], "Solicitante")
+            second_full_report_call = [
+                call
+                for call in send_mock.call_args_list
+                if call.kwargs["recipient"] == "gestor@example.com"
+            ][0]
+            self.assertEqual(second_full_report_call.kwargs["source_csv"], source_csv)
+            self.assertEqual(second_full_report_call.kwargs["requester_name"], "Solicitante")
+            individual_call = [
+                call
+                for call in send_mock.call_args_list
+                if call.kwargs["recipient"] == "bruna@example.com"
+            ][0]
+            self.assertEqual(individual_call.kwargs["source_csv"], delivery_csv)
             build_mock.assert_called_once()
+
+    def test_dispatch_requester_reports_skips_empty_second_full_recipient(self) -> None:
+        settings = SimpleNamespace(
+            soft4=SimpleNamespace(api_key="chave", no_interaction_requester_days=5),
+            email=SimpleNamespace(),
+            requester_report=SimpleNamespace(
+                name="Solicitante",
+                id_column="ID",
+                full_report_recipient="principal@example.com",
+                full_report_recipient2="",
+            ),
+            requester_downloads_dir=Path("entregas"),
+        )
+
+        with (
+            patch("app.orchestrator.run.build_requester_deliveries", return_value=[]),
+            patch("app.orchestrator.run.send_requester_report_email") as send_mock,
+        ):
+            failures: list[str] = []
+            _dispatch_requester_reports(
+                settings,
+                Path("solicitante.csv"),
+                datetime(2026, 6, 23, 8, 0, 0),
+                dry_run=False,
+                failures=failures,
+            )
+
+        self.assertEqual(failures, [])
+        send_mock.assert_called_once()
+        self.assertEqual(send_mock.call_args.kwargs["recipient"], "principal@example.com")
+
+    def test_dispatch_requester_reports_dry_run_logs_second_recipient_without_sending(self) -> None:
+        settings = SimpleNamespace(
+            soft4=SimpleNamespace(api_key="chave", no_interaction_requester_days=5),
+            email=SimpleNamespace(),
+            requester_report=SimpleNamespace(
+                name="Solicitante",
+                id_column="ID",
+                full_report_recipient="principal@example.com",
+                full_report_recipient2="gestor@example.com",
+            ),
+            requester_downloads_dir=Path("entregas"),
+        )
+
+        with (
+            patch("app.orchestrator.run.build_requester_deliveries", return_value=[]),
+            patch("app.orchestrator.run.send_requester_report_email") as send_mock,
+            self.assertLogs("app.orchestrator.run", level="INFO") as captured_logs,
+        ):
+            failures: list[str] = []
+            _dispatch_requester_reports(
+                settings,
+                Path("solicitante.csv"),
+                datetime(2026, 6, 23, 8, 0, 0),
+                dry_run=True,
+                failures=failures,
+            )
+
+        self.assertEqual(failures, [])
+        send_mock.assert_not_called()
+        logs = "\n".join(captured_logs.output)
+        self.assertIn("principal@example.com", logs)
+        self.assertIn("gestor@example.com", logs)
+
+    def test_dispatch_requester_reports_records_second_recipient_failure_and_continues(self) -> None:
+        delivery = SimpleNamespace(
+            solicitante="Bruna",
+            recipient="bruna@example.com",
+            csv_path=Path("bruna.csv"),
+            row_count=1,
+        )
+        settings = SimpleNamespace(
+            soft4=SimpleNamespace(api_key="chave", no_interaction_requester_days=5),
+            email=SimpleNamespace(),
+            requester_report=SimpleNamespace(
+                name="Solicitante",
+                id_column="ID",
+                full_report_recipient="principal@example.com",
+                full_report_recipient2="gestor@example.com",
+            ),
+            requester_downloads_dir=Path("entregas"),
+        )
+
+        def send_side_effect(**kwargs):
+            if kwargs["recipient"] == "gestor@example.com":
+                raise RuntimeError("falha simulada")
+
+        with (
+            patch("app.orchestrator.run.build_requester_deliveries", return_value=[delivery]),
+            patch(
+                "app.orchestrator.run.send_requester_report_email",
+                side_effect=send_side_effect,
+            ) as send_mock,
+        ):
+            failures: list[str] = []
+            _dispatch_requester_reports(
+                settings,
+                Path("solicitante.csv"),
+                datetime(2026, 6, 23, 8, 0, 0),
+                dry_run=False,
+                failures=failures,
+            )
+
+        self.assertEqual(send_mock.call_count, 3)
+        self.assertEqual(
+            failures,
+            ["Relatorio solicitante (copia adicional) gestor@example.com: falha simulada"],
+        )
+        self.assertEqual(send_mock.call_args.kwargs["recipient"], "bruna@example.com")
 
     def test_requester_only_flow_does_not_touch_attendant_emails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
+            events: list[str] = []
             root = Path(temp_dir)
             csv_path = root / "solicitante.csv"
             csv_path.write_text("ID\n1\n", encoding="utf-8")
             settings = SimpleNamespace(
                 soft4=SimpleNamespace(
                     requester_listing_type="SEM_INTERACAO_SOLICITANTE",
-                    no_interaction_requester_days=5,
+                    no_interaction_requester_days=3,
                     additional_holidays="",
                 ),
                 email=SimpleNamespace(),
@@ -200,11 +325,13 @@ class MainRunTests(unittest.TestCase):
                     last_interaction_column="ultima interacao",
                     id_column="ID",
                     full_report_recipient="",
+                    full_report_recipient2="",
                 ),
                 requester_downloads_dir=root / "downloads",
             )
             browser = MagicMock()
-            browser.__enter__.return_value.ensure_authenticated.return_value = object()
+            auth_session = object()
+            browser.__enter__.return_value.ensure_authenticated.return_value = auth_session
 
             with (
                 patch("app.orchestrator.run.setup_logging"),
@@ -215,8 +342,14 @@ class MainRunTests(unittest.TestCase):
                 patch("app.orchestrator.run.download_csv_as", return_value=csv_path) as requester_download,
                 patch("app.orchestrator.run.montar_feriados", return_value=set()),
                 patch("app.orchestrator.run.parse_feriados_adicionais", return_value=set()),
-                patch("app.orchestrator.run.filtrar_csv_por_dias_uteis_sem_interacao"),
-                patch("app.orchestrator.run._dispatch_requester_reports") as dispatch_mock,
+                patch(
+                    "app.orchestrator.run.filtrar_csv_por_dias_uteis_sem_interacao",
+                    side_effect=lambda **_kwargs: events.append("filter"),
+                ) as filter_mock,
+                patch(
+                    "app.orchestrator.run._dispatch_requester_reports",
+                    side_effect=lambda *_args, **_kwargs: events.append("dispatch"),
+                ) as dispatch_mock,
                 patch("app.orchestrator.run.send_dry_run_success_email") as dry_run_success_send,
                 patch("app.orchestrator.run.datetime") as datetime_mock,
             ):
@@ -227,7 +360,17 @@ class MainRunTests(unittest.TestCase):
             dispatch_mock.assert_called_once()
             self.assertTrue(dispatch_mock.call_args.kwargs["dry_run"])
             attendant_download.assert_not_called()
-            requester_download.assert_called_once()
+            requester_download.assert_called_once_with(
+                settings.soft4,
+                auth_session,
+                settings.requester_downloads_dir,
+                "SEM_INTERACAO_SOLICITANTE",
+                3,
+                "solicitante",
+            )
+            filter_mock.assert_called_once()
+            self.assertEqual(filter_mock.call_args.kwargs["limite_dias_uteis"], 3)
+            self.assertEqual(events, ["filter", "dispatch"])
             dry_run_success_send.assert_not_called()
 
     def test_setup_logging_writes_to_rotating_file(self) -> None:
